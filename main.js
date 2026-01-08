@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import vertexShader from './shaders/shader.vert';
 import fragmentShader from './shaders/shader.frag';
@@ -11,24 +13,28 @@ scene.background = new THREE.Color(0x808080);
 // Camera setup
 // ------------
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.z = 2;
+camera.position.set(0, 0, 1);
 
 // Renderer setup
 // --------------
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Geometry (VBO) setup
-// --------------------
-const geometry = new THREE.BoxGeometry(1, 1, 1);
+// OrbitControls setup
+// -------------------
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
 // Material (Shader) setup
 // -----------------------
-const material = new THREE.ShaderMaterial({
+const doragonMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: true,
+    side: THREE.FrontSide,
     uniforms: {
         uLightDirection: { value: new THREE.Vector3(1.0, 1.0, 1.0).normalize() },
-        uColor: { value: new THREE.Color(0x00aaff) },
+        uColor: { value: new THREE.Color(0xba55d3) },
         uSpecularColor: { value: new THREE.Color(0xffffff) },
         uShininess: { value: 32.0 }
     },
@@ -37,19 +43,23 @@ const material = new THREE.ShaderMaterial({
     fragmentShader: fragmentShader
 });
 
-// Mesh (VBO + Shader) setup
-// -------------------------
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+// Load 3D Model
+// -------------
+new OBJLoader().load('/dragon.obj', (obj) => {
+    obj.traverse((child) => {
+        if (child.isMesh) child.material = doragonMaterial;
+    });
+
+    obj.position.set(0, 0, 0);
+    scene.add(obj);
+});
+
 
 // Rendering loop
 // --------------
 function animate(){
     requestAnimationFrame(animate);
-
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-
+    controls.update();
     renderer.render(scene, camera);
 }
 
