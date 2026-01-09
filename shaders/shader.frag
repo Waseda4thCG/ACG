@@ -6,6 +6,7 @@ uniform float uShininess;
 varying vec3 vNormal;
 varying vec3 vFragPos;
 
+// lighting is calculated in world space
 void main() {
     vec3 normal = normalize(vNormal);
 
