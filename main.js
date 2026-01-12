@@ -25,6 +25,11 @@ document.body.appendChild(renderer.domElement);
 // -------------------
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+// debug Sphere (this shows the current target position of the controls)
+const debugGeometry = new THREE.SphereGeometry(0.01, 16, 16);
+const debugMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+const debugSphere = new THREE.Mesh(debugGeometry, debugMaterial);
+scene.add(debugSphere);
 
 // Material (Shader) setup
 // -----------------------
@@ -63,6 +68,7 @@ new OBJLoader().load('/dragon.obj', (obj) => {
 function animate(){
     requestAnimationFrame(animate);
     controls.update();
+    debugSphere.position.copy(controls.target);
     renderer.render(scene, camera);
 }
 
