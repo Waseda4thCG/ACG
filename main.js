@@ -32,52 +32,37 @@ const debugMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: 
 const debugSphere = new THREE.Mesh(debugGeometry, debugMaterial);
 scene.add(debugSphere);
 
-// Material (Shader) setup
-// -----------------------
-const Material = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: true,
-    side: THREE.FrontSide,
-    uniforms: {
-        uLightDirection: { value: new THREE.Vector3(1.0, 1.0, 1.0).normalize() },
-        uColor: { value: new THREE.Color(0xba55d3) },
-        uSpecularColor: { value: new THREE.Color(0xffffff) },
-        uShininess: { value: 32.0 }
-    },
-
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader
-});
+function setupMaterial() {
+    return new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: true,
+        vertexColors: true, // not used
+        side: THREE.FrontSide,
+        uniforms: {
+            uLightDirection: { value: new THREE.Vector3(1.0, 1.0, 1.0).normalize() },
+            uColor: { value: new THREE.Color(0xba55d3) },
+            uSpecularColor: { value: new THREE.Color(0xffffff) },
+            uShininess: { value: 32.0 }
+        },
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader
+    });
+}
 
 // Load 3D Model
 // -------------
-new GLTFLoader().load('/apple.glb', (gltf) => {
+new GLTFLoader().load('/rikocam.glb', (gltf) => {
     const obj = gltf.scene;
 
     obj.traverse((child) => {
         if (child.isMesh)
         {
-            const originalTexture = child.material.map;
-            child.material = new THREE.ShaderMaterial({
-                transparent: true,
-                depthWrite: true,
-                vertexColors: true,
-                side: THREE.FrontSide,
-                uniforms: {
-                    uLightDirection: { value: new THREE.Vector3(1.0, 1.0, 1.0).normalize() },
-                    uTexture: { value: originalTexture },
-                    uSpecularColor: { value: new THREE.Color(0xffffff) },
-                    uShininess: { value: 32.0 }
-                },
-
-                vertexShader: vertexShader,
-                fragmentShader: fragmentShader
-            });
+            child.material = setupMaterial();
         }
     });
 
     obj.position.set(0, 0, 0);
-    // obj.scale.set(10, 10, 10);
+    obj.scale.set(0.01, 0.01, 0.01);
 
     scene.add(obj);
 });
