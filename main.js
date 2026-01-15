@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+// import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import vertexShader from './shaders/shader.vert';
@@ -33,7 +34,7 @@ scene.add(debugSphere);
 
 // Material (Shader) setup
 // -----------------------
-const doragonMaterial = new THREE.ShaderMaterial({
+const Material = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: true,
     side: THREE.FrontSide,
@@ -50,15 +51,34 @@ const doragonMaterial = new THREE.ShaderMaterial({
 
 // Load 3D Model
 // -------------
-new OBJLoader().load('/dragon.obj', (obj) => {
+new GLTFLoader().load('/apple.glb', (gltf) => {
+    const obj = gltf.scene;
+
     obj.traverse((child) => {
-        if (child.isMesh) child.material = doragonMaterial;
+        if (child.isMesh)
+        {
+            const originalTexture = child.material.map;
+            child.material = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: true,
+                vertexColors: true,
+                side: THREE.FrontSide,
+                uniforms: {
+                    uLightDirection: { value: new THREE.Vector3(1.0, 1.0, 1.0).normalize() },
+                    uTexture: { value: originalTexture },
+                    uSpecularColor: { value: new THREE.Color(0xffffff) },
+                    uShininess: { value: 32.0 }
+                },
+
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader
+            });
+        }
     });
 
-    obj.rotation.y = Math.PI / 2;
-    obj.updateMatrixWorld();
-
     obj.position.set(0, 0, 0);
+    // obj.scale.set(10, 10, 10);
+
     scene.add(obj);
 });
 
