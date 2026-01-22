@@ -5,10 +5,11 @@ import fishVertexShader from '../shaders/underwater/fish.vert';
 import fishFragmentShader from '../shaders/underwater/fish.frag';
 
 export class FishController {
-    constructor(scene) {
+    constructor(scene, config) {
         this.scene = scene;
+        this.config = config;
         this.raycaster = new THREE.Raycaster();
-        this.count = 500;
+        this.count = config.fish?.count ?? 500;
         this.boids = [];
         this.mesh = null;
         this.dummy = new THREE.Object3D();
@@ -23,22 +24,32 @@ export class FishController {
     }
 
     init() {
-        const boundSize = { w: 400, h: 50, d: 180 }; // 魚が泳ぐ範囲
+        const { bounds, fish, boid } = this.config;
+        const boundSize = {
+            w: bounds?.width ?? 400,
+            h: bounds?.height ?? 50,
+            d: bounds?.depth ?? 180
+        };
         const speeds = new Float32Array(this.count);
         const offsets = new Float32Array(this.count);
 
         for (let i = 0; i < this.count; i++) {
-            this.boids.push(new Boid(boundSize.w, boundSize.h, boundSize.d, i));
+            this.boids.push(new Boid(boundSize.w, boundSize.h, boundSize.d, i, boid));
         }
 
-        const fishGeometry = new THREE.ConeGeometry(0.3, 1.2, 8);
+        const meshRadius = fish?.meshRadius ?? 0.3;
+        const meshLength = fish?.meshLength ?? 1.2;
+        const fishGeometry = new THREE.ConeGeometry(meshRadius, meshLength, 8);
         fishGeometry.rotateX(Math.PI / 2);
 
         const fishMaterial = new THREE.ShaderMaterial({
             vertexShader: fishVertexShader,
             fragmentShader: fishFragmentShader,
-            uniforms: { uTime: { value: 0.0 } },
-            side: THREE.DoubleSide
+            uniforms: {
+                ...THREE.UniformsLib.fog,
+                uTime: { value: 0.0 } },
+            side: THREE.DoubleSide,
+            fog: true
         });
 
         // 魚の初期位置

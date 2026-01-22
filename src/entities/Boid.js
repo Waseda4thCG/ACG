@@ -11,22 +11,23 @@ const _tmpDirR = new THREE.Vector3();
 const _tmp = new THREE.Vector3();
 
 export class Boid {
-    constructor(sceneWidth, sceneHeight, sceneDepth, index) {
+    constructor(sceneWidth, sceneHeight, sceneDepth, index, boidConfig = {}) {
         this.sceneWidth = sceneWidth;
         this.sceneHeight = sceneHeight;
         this.sceneDepth = sceneDepth;
         this.index = index;
 
-        this.minHeight = 2.0;
-        this.bodySize = 1.5;
-        this.maxSpeed = 0.3;
-        this.maxForce = 0.01;
-        this.perceptionRadius = 15.0;
-        this.collisionRadius = 5.0;
-        this.avoidanceWeight = 2.5;
-        this.separationWeight = 4.0;
-        this.alignmentWeight = 0.3;
-        this.cohesionWeight = 0.1;
+        // configから値を取得、未指定の場合はデフォルト値を使用
+        this.minHeight = boidConfig.minHeight ?? 2.0;
+        this.bodySize = boidConfig.bodySize ?? 1.5;
+        this.maxSpeed = boidConfig.maxSpeed ?? 0.3;
+        this.maxForce = boidConfig.maxForce ?? 0.01;
+        this.perceptionRadius = boidConfig.perceptionRadius ?? 15.0;
+        this.collisionRadius = boidConfig.collisionRadius ?? 5.0;
+        this.avoidanceWeight = boidConfig.avoidanceWeight ?? 2.5;
+        this.separationWeight = boidConfig.separationWeight ?? 4.0;
+        this.alignmentWeight = boidConfig.alignmentWeight ?? 0.3;
+        this.cohesionWeight = boidConfig.cohesionWeight ?? 0.1;
 
         // 初期配置
         const clusterIndex = Math.floor(index / 10);

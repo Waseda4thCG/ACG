@@ -3,14 +3,15 @@ import * as THREE from 'three';
 import { BaseEnvironment } from './BaseEnvironment.js';
 import { FishController } from '../controllers/FishController.js';
 
-import vertexShader from '../shaders/shader.vert';
+import vertexShader from '../shaders/building/shader.vert';
 import windowFragmentShader from '../shaders/building/window.frag';
 import roofFragmentShader from '../shaders/building/roof.frag';
 import wallFragmentShader from '../shaders/building/wall.frag';
 
 export class UrbanEnvironment extends BaseEnvironment {
-    constructor(scene, renderer, camera) {
+    constructor(scene, renderer, camera, config) {
         super(scene, renderer, camera);
+        this.config = config;
         this.materials = {};
     }
 
@@ -37,9 +38,8 @@ export class UrbanEnvironment extends BaseEnvironment {
                 }
             });
 
-            // スケールと位置の調整 (元のコードに準拠)
             root.position.set(0, 0, 0);
-            root.scale.set(0.01, 0.01, 0.01);
+            root.scale.setScalar(this.config.modelScale);
 
             this.scene.add(root);
         }
@@ -59,12 +59,16 @@ export class UrbanEnvironment extends BaseEnvironment {
     }
 
     _setupMaterials() {
-        // 共通Uniforms
+        const { shader } = this.config;
+        const textureScale = shader?.textureScale ?? 1.0;
+        const windowSize = shader?.windowSize ?? 20.0;
+
         const commonUniforms = {
             uLightDirection: { value: new THREE.Vector3(0.5, 0.5, 0.5).normalize() },
             uSpecularColor: { value: new THREE.Color('#ffffff') },
             uShininess: { value: 32.0 },
             uTime: { value: 0.0 },
+            uScale: { value: textureScale },
         };
 
         this.materials.window = new THREE.ShaderMaterial({
@@ -73,7 +77,7 @@ export class UrbanEnvironment extends BaseEnvironment {
             side: THREE.FrontSide,
             uniforms: {
                 ...commonUniforms,
-                uWindowSize: { value: 20.0 },
+                uWindowSize: { value: windowSize },
                 uWindowColor: { value: new THREE.Color('#cfecf6') },
             },
             vertexShader: vertexShader,

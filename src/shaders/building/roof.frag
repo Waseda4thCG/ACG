@@ -4,6 +4,7 @@ uniform float uShininess;
 
 uniform vec3 uRoofColor;
 uniform float uTime;
+uniform float uScale;
 
 varying vec3 vNormal;
 varying vec3 vFragPos;
@@ -37,8 +38,8 @@ vec4 getRoofTexture(vec3 pos) {
     vec2 uv = pos.xz;
 
     // コンクリート/アスファルトの質感
-    float asphalt = fbm(uv * 10.0);
-    float grain = hash(uv * 50.0); // 細かいざらつき
+    float asphalt = fbm(uv * 10.0 * uScale);
+    float grain = hash(uv * 50.0 * uScale);  // 細かいざらつき
 
     vec3 color = uRoofColor * (0.8 + 0.3 * asphalt);
     color = mix(color, vec3(0.7), grain * 0.1);

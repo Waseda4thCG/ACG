@@ -6,7 +6,7 @@ import { EnvironmentManager } from './manager/EnvironmentManager.js';
 const CAMERA_FOV = 75;
 const CAMERA_NEAR = 0.1;
 const CAMERA_FAR = 1000.0;
-const CAMERA_POSITION = new THREE.Vector3(1.2, 0.5, 0.8);
+const CAMERA_POSITION = new THREE.Vector3(120, 50, 80);  // スケール1.0に対応
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(CAMERA_FOV, window.innerWidth / window.innerHeight, CAMERA_NEAR, CAMERA_FAR);

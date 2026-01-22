@@ -5,6 +5,7 @@ uniform float uShininess;
 uniform float uWindowSize;
 uniform vec3 uWindowColor;
 uniform float uTime;
+uniform float uScale;
 
 varying vec3 vNormal;
 varying vec3 vFragPos;
@@ -50,7 +51,7 @@ vec4 getWindowTexture(vec3 pos, vec3 normal, vec3 viewDir) {
             float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
             vec3 skyReflect = vec3(0.4, 0.5, 0.6);
             color = mix(color, skyReflect, fresnel * 0.5);
-            color += (hash(tileUV * 10.0) - 0.5) * 0.05;
+            color += (hash(tileUV * 10.0 * uScale) - 0.5) * 0.05;
 
             specStr = 2.0;
         }

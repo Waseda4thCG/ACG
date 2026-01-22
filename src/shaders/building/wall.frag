@@ -4,6 +4,7 @@ uniform float uShininess;
 
 uniform vec3 uWallColor;
 uniform float uTime;
+uniform float uScale;
 
 varying vec3 vNormal;
 varying vec3 vFragPos;
@@ -43,8 +44,8 @@ vec4 getWallTexture(vec3 pos, vec3 normal) {
     }
 
     // コンクリート壁の質感
-    float dirt = fbm(uv * 2.0); // 大きいムラ
-    float grain = hash(uv * 50.0); // 細かいざらつき
+    float dirt = fbm(uv * 2.0 * uScale);  // 大きいムラ
+    float grain = hash(uv * 50.0 * uScale);  // 細かいざらつき
 
     vec3 color = uWallColor * (0.6 + 0.4 * dirt);
     color = mix(color, vec3(0.8), grain * 0.2);
