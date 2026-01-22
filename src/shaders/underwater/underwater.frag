@@ -56,16 +56,5 @@ void main() {
 
     vec3 albedo = ambient + diffuse;
 
-    // Fog
-    float dist = length(cameraPosition - vFragPos);
-
-    float t = clamp((dist - uFogNear) / max(eps, uFogFar - uFogNear), 0.0, 1.0);
-
-    float fogFactor = (1.0 - exp(-uFogDensity * t)) * uFogMax;
-
-    vec3 fogColor = mix(uShallowWaterColor, uDeepWaterColor, smoothstep(30.0, -30.0, pos.y));
-
-    vec3 finalColor = mix(albedo, fogColor, fogFactor);
-
-    gl_FragColor = vec4(finalColor, 1.0);
+    gl_FragColor = vec4(albedo, 1.0);
 }
