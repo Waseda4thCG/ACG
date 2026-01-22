@@ -5,7 +5,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Boid } from './boid.js';
 
 import vertexShader from './shaders/shader.vert';
-import fragmentShader from './shaders/shader_nature.frag';
+import windowFragmentShader from './shaders/window.frag';
+import roofFragmentShader from './shaders/roof.frag';
+import wallFragmentShader from './shaders/wall.frag';
 
 // Scene setup
 // -----------
@@ -36,53 +38,75 @@ scene.add(debugSphere);
 
 const clock = new THREE.Clock();
 
-function setupMaterial() {
+function setupWindowMaterial() {
     return new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: true,
-        vertexColors: true, // not used
         side: THREE.FrontSide,
         uniforms: {
-            // Lighting
-            // uLightDirection: { value: new THREE.Vector3(1.0, 0.4, 1.0).normalize() },
-            // uSpecularColor: { value: new THREE.Color('#ffffff') },
-            // uShininess: { value: 32.0 },
-
-            // uWindowSize: { value: 20.0 },
-            // uWallColor: { value: new THREE.Color('#c5c5c5') },
-            // uWindowColor: { value: new THREE.Color('#cfecf6') },
-            // uRoofColor: { value: new THREE.Color('#a9a9a9') },
-            // uStyleState: { value: 0.0 },
-            // uTime: { value: 0.0 }
-
             uLightDirection: { value: new THREE.Vector3(0.5, 0.5, 0.5).normalize() },
-            uSpecularColor: { value: new THREE.Color('#ffffee') },
-            uShininess: { value: 10.0 },
-            uBaseColor: { value: new THREE.Color('#5a5a5a') },
-            uMossLightColor: { value: new THREE.Color('#8a9a5b') },
-            uMossDarkColor: { value: new THREE.Color('#374a25') },
-            uVineColor: { value: new THREE.Color('#223311') },
-            uScale: { value: 15.0 },
+            uSpecularColor: { value: new THREE.Color('#ffffff') },
+            uShininess: { value: 32.0 },
+            uWindowSize: { value: 20.0 },
+            uWindowColor: { value: new THREE.Color('#cfecf6') },
             uTime: { value: 0.0 },
-
-            uDeepWaterColor: { value: new THREE.Color('#001e33') }, // 深海の暗い青
-            uShallowWaterColor: { value: new THREE.Color('#0036be') }, // 浅瀬の明るい青
-            uCausticColor: { value: new THREE.Color('#ffffff') } // 光の模様の色
         },
         vertexShader: vertexShader,
-        fragmentShader: fragmentShader
+        fragmentShader: windowFragmentShader
+    });
+}
+
+function setupRoofMaterial() {
+    return new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: true,
+        side: THREE.FrontSide,
+        uniforms: {
+            uLightDirection: { value: new THREE.Vector3(0.5, 0.5, 0.5).normalize() },
+            uSpecularColor: { value: new THREE.Color('#ffffff') },
+            uShininess: { value: 32.0 },
+            uRoofColor: { value: new THREE.Color('#a9a9a9') },
+            uTime: { value: 0.0 },
+        },
+        vertexShader: vertexShader,
+        fragmentShader: roofFragmentShader
+    });
+}
+
+function setupWallMaterial() {
+    return new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: true,
+        side: THREE.FrontSide,
+        uniforms: {
+            uLightDirection: { value: new THREE.Vector3(0.5, 0.5, 0.5).normalize() },
+            uSpecularColor: { value: new THREE.Color('#ffffff') },
+            uShininess: { value: 32.0 },
+            uWallColor: { value: new THREE.Color('#c5c5c5') },
+            uTime: { value: 0.0 },
+        },
+        vertexShader: vertexShader,
+        fragmentShader: wallFragmentShader
     });
 }
 
 // Load 3D Model
 // -------------
-new GLTFLoader().load('/rikocam.glb', (gltf) => {
+new GLTFLoader().load('/rikocamtexv2.glb', (gltf) => {
     const obj = gltf.scene;
 
     obj.traverse((child) => {
-        if (child.isMesh)
-        {
-            child.material = setupMaterial();
+        if (child.isMesh) {
+            const materialName = child.material.name ? child.material.name.toLowerCase() : '';
+
+            if (materialName.includes('window')) {
+                child.material = setupWindowMaterial();
+            } else if (materialName.includes('roof')) {
+                child.material = setupRoofMaterial();
+            } else {
+                // Default to wall material
+                child.material = setupWallMaterial();
+            }
         }
     });
 
@@ -94,7 +118,7 @@ new GLTFLoader().load('/rikocam.glb', (gltf) => {
 
 // Rendering loop
 // --------------
-function animate(){
+function animate() {
     requestAnimationFrame(animate);
 
     const elapsedTime = clock.getElapsedTime();
