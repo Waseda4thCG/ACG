@@ -6,9 +6,11 @@ export class MovementUI {
     this.container = null;
     this.currentMode = 'free';
     this.environmentManager = environmentManager; // SSOT for environment
-    this.environments = ['Urban', 'Nature', 'Underwater']; // 利用可能な環境リスト
+    this.environments = ['Urban', 'Nature', 'CyberPunk', 'Underwater']; // 利用可能な環境リスト
     this.onEnvironmentChange = null;
     this.onFlightModeChange = null;
+    this.onControlModeChange = null; // 操作モード変更時のコールバック
+    this.currentControlMode = 'keyboard'; // 'keyboard' or 'mouseOnly'
     this.isOpen = true; // サイドバーが開いているか
     this._createUI();
     this._attachKeyboardListener();
@@ -67,6 +69,29 @@ export class MovementUI {
         <div class="flight-hint">Press <kbd>G</kbd> to toggle</div>
       </div>
 
+      <!-- Control Mode選択 -->
+      <div class="control-mode-section">
+        <div class="section-label">Control Mode</div>
+        <div class="control-mode-buttons">
+          <button class="control-mode-btn active" data-control="keyboard">
+            <span class="control-icon">⌨️</span>
+            <div class="control-info">
+              <div class="control-mode-name">Keyboard</div>
+              <div class="control-mode-desc">WASD + Mouse</div>
+            </div>
+            <span class="control-check">✓</span>
+          </button>
+          <button class="control-mode-btn" data-control="mouseOnly">
+            <span class="control-icon">🖱️</span>
+            <div class="control-info">
+              <div class="control-mode-name">Mouse Only</div>
+              <div class="control-mode-desc">Orbit + Pan + Zoom</div>
+            </div>
+            <span class="control-check">✓</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 環境選択 -->
       <div class="environment-section">
         <div class="section-header">
@@ -84,6 +109,11 @@ export class MovementUI {
             <span class="env-name">Nature</span>
             <span class="env-check">✓</span>
           </button>
+          <button class="env-btn" data-env="CyberPunk">
+            <span class="env-icon">🤖</span>
+            <span class="env-name">CyberPunk</span>
+            <span class="env-check">✓</span>
+          </button>
           <button class="env-btn" data-env="Underwater">
             <span class="env-icon">🌊</span>
             <span class="env-name">Underwater</span>
@@ -91,37 +121,6 @@ export class MovementUI {
           </button>
         </div>
       </div>
-
-      <!-- コントロール情報 -->
-      <div class="controls-section">
-        <div class="section-label">Controls</div>
-        <div class="control-grid">
-          <div class="control-item">
-            <div class="control-keys-row">
-              <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-            </div>
-            <div class="control-desc">Move</div>
-          </div>
-          <div class="control-item" id="vertical-control">
-            <div class="control-keys-row">
-              <kbd class="key-wide">Space</kbd><kbd class="key-wide">Shift</kbd>
-            </div>
-            <div class="control-desc">Up / Down</div>
-          </div>
-          <div class="control-item">
-            <div class="control-keys-row">
-              <span class="icon-mouse">🖱️</span>
-            </div>
-            <div class="control-desc">Click & Look</div>
-          </div>
-        </div>
-      </div>
-
-        <!-- ヒント -->
-        <div class="hint-message" id="hint-message">
-          <span class="hint-inactive">Click to start exploring</span>
-          <span class="hint-active">Click again or press ESC to exit</span>
-        </div>
       </div>
     `;
 
@@ -131,6 +130,9 @@ export class MovementUI {
 
     // 左下のMキーヒントを追加
     this.createMKeyHint();
+
+    // 下部中央のヒントメッセージを追加
+    this.createHintMessage();
   }
 
   createMKeyHint() {
@@ -141,6 +143,17 @@ export class MovementUI {
       <span>Toggle Menu</span>
     `;
     document.body.appendChild(this.mKeyHint);
+  }
+
+  createHintMessage() {
+    this.hintMessage = document.createElement('div');
+    this.hintMessage.className = 'hint-message';
+    this.hintMessage.id = 'hint-message';
+    this.hintMessage.innerHTML = `
+      <span class="hint-inactive">Click to start exploring</span>
+      <span class="hint-active">Click again or press ESC to exit</span>
+    `;
+    document.body.appendChild(this.hintMessage);
   }
 
   _injectStyles() {
@@ -233,7 +246,7 @@ export class MovementUI {
       .sidebar-content {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         opacity: 1;
         transform: translateX(0);
@@ -248,21 +261,21 @@ export class MovementUI {
       /* グラスモーフィズム効果 */
       .ui-header,
       .flight-mode-section,
-      .environment-section,
-      .controls-section {
+      .control-mode-section,
+      .environment-section {
         background: rgba(15, 15, 25, 0.85);
         backdrop-filter: blur(20px) saturate(180%);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 16px;
-        padding: 20px;
+        padding: 16px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .ui-header:hover,
       .flight-mode-section:hover,
-      .environment-section:hover,
-      .controls-section:hover {
+      .control-mode-section:hover,
+      .environment-section:hover {
         border-color: rgba(255, 255, 255, 0.2);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
       }
@@ -272,18 +285,18 @@ export class MovementUI {
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 16px 20px;
+        padding: 12px 16px;
       }
 
       .app-title {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
       }
 
       .title-icon {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -307,7 +320,7 @@ export class MovementUI {
       }
 
       .title-text {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         letter-spacing: -0.5px;
         background: linear-gradient(135deg, #ffffff 0%, #b8c5e8 100%);
@@ -317,7 +330,7 @@ export class MovementUI {
       }
 
       .title-subtitle {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 500;
         color: rgba(255, 255, 255, 0.5);
         letter-spacing: 0.3px;
@@ -327,17 +340,17 @@ export class MovementUI {
       .flight-mode-buttons {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
       }
 
       .flight-btn {
         background: rgba(255, 255, 255, 0.05);
         border: 1.5px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        padding: 14px 16px;
+        padding: 12px 14px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         pointer-events: auto;
@@ -358,7 +371,7 @@ export class MovementUI {
       }
 
       .flight-icon {
-        font-size: 28px;
+        font-size: 24px;
         filter: grayscale(0.5);
         transition: filter 0.3s ease;
         flex-shrink: 0;
@@ -397,7 +410,7 @@ export class MovementUI {
       }
 
       .flight-hint {
-        margin-top: 12px;
+        margin-top: 8px;
         text-align: center;
         font-size: 11px;
         color: rgba(255, 255, 255, 0.4);
@@ -407,12 +420,85 @@ export class MovementUI {
         margin: 0 4px;
       }
 
+      /* Control Modeセクション */
+      .control-mode-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .control-mode-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: auto;
+        color: rgba(255, 255, 255, 0.7);
+        position: relative;
+      }
+
+      .control-mode-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .control-mode-btn.active {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+        border-color: rgba(102, 126, 234, 0.6);
+        color: #ffffff;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+      }
+
+      .control-icon {
+        font-size: 24px;
+        filter: grayscale(0.5);
+        transition: filter 0.3s ease;
+        flex-shrink: 0;
+      }
+
+      .control-mode-btn.active .control-icon {
+        filter: grayscale(0);
+      }
+
+      .control-info {
+        flex: 1;
+        text-align: left;
+      }
+
+      .control-mode-name {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        margin-bottom: 2px;
+      }
+
+      .control-mode-desc {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .control-check {
+        font-size: 18px;
+        color: #667eea;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .control-mode-btn.active .control-check {
+        opacity: 1;
+      }
+
       /* セクションヘッダー */
       .section-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
 
       .section-label {
@@ -421,6 +507,7 @@ export class MovementUI {
         text-transform: uppercase;
         letter-spacing: 1.5px;
         color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 10px;
       }
 
       .section-hint {
@@ -447,7 +534,7 @@ export class MovementUI {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 200px;
+        max-height: 180px;
         overflow-y: auto;
         overflow-x: hidden;
         padding-right: 4px;
@@ -597,15 +684,22 @@ export class MovementUI {
 
       /* ヒントメッセージ */
       .hint-message {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
         text-align: center;
-        padding: 12px 20px;
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 191, 36, 0.15));
+        padding: 12px 24px;
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
         border: 1px solid rgba(245, 158, 11, 0.3);
         border-radius: 12px;
         color: #fbbf24;
         font-size: 13px;
         font-weight: 600;
         transition: all 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       }
 
       .hint-inactive {
@@ -624,8 +718,9 @@ export class MovementUI {
 
       /* ポインターロック中は表示を切り替え */
       body.pointer-locked .hint-message {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(167, 139, 250, 0.15));
-        border-color: rgba(139, 92, 246, 0.3);
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
+        border-color: rgba(139, 92, 246, 0.5);
         color: #c4b5fd;
       }
 
@@ -716,6 +811,18 @@ export class MovementUI {
         this.setMode(grounded);
         if (this.onFlightModeChange) {
           this.onFlightModeChange(grounded);
+        }
+      });
+    });
+
+    // Control Modeボタンのクリックイベント
+    const controlModeButtons = this.container.querySelectorAll('.control-mode-btn');
+    controlModeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const controlMode = btn.dataset.control;
+        this.setControlMode(controlMode);
+        if (this.onControlModeChange) {
+          this.onControlModeChange(controlMode);
         }
       });
     });
@@ -820,12 +927,29 @@ export class MovementUI {
     });
   }
 
+  setControlMode(controlMode) {
+    this.currentControlMode = controlMode;
+
+    // Control Modeボタンの状態を更新
+    const controlModeButtons = this.container.querySelectorAll('.control-mode-btn');
+    controlModeButtons.forEach(btn => {
+      if (btn.dataset.control === controlMode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
   dispose() {
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
     if (this.mKeyHint && this.mKeyHint.parentNode) {
       this.mKeyHint.parentNode.removeChild(this.mKeyHint);
+    }
+    if (this.hintMessage && this.hintMessage.parentNode) {
+      this.hintMessage.parentNode.removeChild(this.hintMessage);
     }
   }
 }

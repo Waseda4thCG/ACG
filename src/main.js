@@ -36,6 +36,12 @@ movementUI.onFlightModeChange = (grounded) => {
     }
 };
 
+// UIのControl Modeボタンクリック時のコールバック
+movementUI.onControlModeChange = (controlMode) => {
+    const mouseOnly = controlMode === 'mouseOnly';
+    controls.setMouseOnlyMode(mouseOnly);
+};
+
 // 環境変更時のコールバックを設定
 movementUI.onEnvironmentChange = (env) => {
     envManager.switchMode(env);
@@ -43,46 +49,6 @@ movementUI.onEnvironmentChange = (env) => {
 };
 
 const clock = new THREE.Clock();
-
-// 共通の床とライトを作成
-let floorMesh = null;
-
-function createFloor() {
-    const floorSize = 500;
-    const floorGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
-
-    // アスファルト風の床
-    const floorMaterial = new THREE.MeshStandardMaterial({
-        color: '#4a4a4a',
-        roughness: 0.9,
-        metalness: 0.1,
-    });
-
-    floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
-    floorMesh.rotation.x = -Math.PI / 2;
-    floorMesh.position.y = 0;
-    floorMesh.receiveShadow = true;
-    scene.add(floorMesh);
-
-    // 道路のライン風のグリッド
-    const gridHelper = new THREE.GridHelper(floorSize, 25, '#ffff00', '#666666');
-    gridHelper.position.y = 0.02;
-    scene.add(gridHelper);
-}
-
-function createLights() {
-    // 環境光
-    const ambientLight = new THREE.AmbientLight('#ffffff', 0.5);
-    scene.add(ambientLight);
-
-    // 指向性ライト
-    const directionalLight = new THREE.DirectionalLight('#ffffff', 0.8);
-    directionalLight.position.set(50, 100, 50);
-    scene.add(directionalLight);
-}
-
-createFloor();
-createLights();
 
 // 非同期で初期化
 envManager.init(scene, renderer, camera).then(() => {
@@ -93,23 +59,8 @@ envManager.init(scene, renderer, camera).then(() => {
 });
 
 function setupCollisions() {
-    const collisionObjects = [];
-
-    // 床を追加
-    if (floorMesh) {
-        collisionObjects.push(floorMesh);
-    }
-
-    // 建物のメッシュを追加
-    if (envManager.sharedAssets.buildingRoot) {
-        envManager.sharedAssets.buildingRoot.traverse((child) => {
-            if (child.isMesh) {
-                collisionObjects.push(child);
-            }
-        });
-    }
-
-    // 衝突対象を設定
+    // EnvironmentManagerから衝突オブジェクトを取得
+    const collisionObjects = envManager.getCollisionObjects();
     controls.setCollisionObjects(collisionObjects);
 }
 
