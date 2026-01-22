@@ -116,12 +116,6 @@ export class MovementUI {
           </div>
         </div>
       </div>
-
-        <!-- ヒント -->
-        <div class="hint-message" id="hint-message">
-          <span class="hint-inactive">Click to start exploring</span>
-          <span class="hint-active">Click again or press ESC to exit</span>
-        </div>
       </div>
     `;
 
@@ -131,6 +125,9 @@ export class MovementUI {
 
     // 左下のMキーヒントを追加
     this.createMKeyHint();
+
+    // 下部中央のヒントメッセージを追加
+    this.createHintMessage();
   }
 
   createMKeyHint() {
@@ -141,6 +138,17 @@ export class MovementUI {
       <span>Toggle Menu</span>
     `;
     document.body.appendChild(this.mKeyHint);
+  }
+
+  createHintMessage() {
+    this.hintMessage = document.createElement('div');
+    this.hintMessage.className = 'hint-message';
+    this.hintMessage.id = 'hint-message';
+    this.hintMessage.innerHTML = `
+      <span class="hint-inactive">Click to start exploring</span>
+      <span class="hint-active">Click again or press ESC to exit</span>
+    `;
+    document.body.appendChild(this.hintMessage);
   }
 
   _injectStyles() {
@@ -597,15 +605,22 @@ export class MovementUI {
 
       /* ヒントメッセージ */
       .hint-message {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
         text-align: center;
-        padding: 12px 20px;
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 191, 36, 0.15));
+        padding: 12px 24px;
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
         border: 1px solid rgba(245, 158, 11, 0.3);
         border-radius: 12px;
         color: #fbbf24;
         font-size: 13px;
         font-weight: 600;
         transition: all 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       }
 
       .hint-inactive {
@@ -624,8 +639,9 @@ export class MovementUI {
 
       /* ポインターロック中は表示を切り替え */
       body.pointer-locked .hint-message {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(167, 139, 250, 0.15));
-        border-color: rgba(139, 92, 246, 0.3);
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
+        border-color: rgba(139, 92, 246, 0.5);
         color: #c4b5fd;
       }
 
@@ -826,6 +842,9 @@ export class MovementUI {
     }
     if (this.mKeyHint && this.mKeyHint.parentNode) {
       this.mKeyHint.parentNode.removeChild(this.mKeyHint);
+    }
+    if (this.hintMessage && this.hintMessage.parentNode) {
+      this.hintMessage.parentNode.removeChild(this.hintMessage);
     }
   }
 }
