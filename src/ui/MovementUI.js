@@ -6,7 +6,7 @@ export class MovementUI {
     this.container = null;
     this.currentMode = 'free';
     this.environmentManager = environmentManager; // SSOT for environment
-    this.environments = ['Urban', 'Underwater']; // 利用可能な環境リスト
+    this.environments = ['Urban', 'Nature', 'Underwater']; // 利用可能な環境リスト
     this.onEnvironmentChange = null;
     this.onFlightModeChange = null;
     this.isOpen = true; // サイドバーが開いているか
@@ -78,6 +78,10 @@ export class MovementUI {
             <button class="env-btn active" data-env="Urban">
               <span class="env-icon">🏙️</span>
               <span class="env-name">Urban</span>
+            </button>
+            <button class="env-btn" data-env="Nature">
+              <span class="env-icon">🌿</span>
+              <span class="env-name">Nature</span>
             </button>
             <button class="env-btn" data-env="Underwater">
               <span class="env-icon">🌊</span>
