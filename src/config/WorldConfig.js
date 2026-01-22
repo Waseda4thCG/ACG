@@ -8,6 +8,14 @@ export const WorldConfig = {
         }
     },
 
+    Nature: {
+        modelScale: 1.0,
+
+        shader: {
+            textureScale: 1.0,
+        }
+    },
+
     Underwater: {
         modelScale: 1.0,
 

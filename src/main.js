@@ -38,7 +38,7 @@ function setupGUI() {
     const gui = new GUI();
     const params = { mode: 'Urban' };
 
-    gui.add(params, 'mode', ['Urban', 'Underwater']).onChange((value) => {
+    gui.add(params, 'mode', ['Urban', 'Nature', 'Underwater']).onChange((value) => {
         envManager.switchMode(value);
     });
 }

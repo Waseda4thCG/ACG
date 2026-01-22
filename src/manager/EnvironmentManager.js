@@ -2,6 +2,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // 各環境クラスをimport
 import { UrbanEnvironment } from '../environments/UrbanEnvironment.js';
+import { NatureEnvironment } from '../environments/NatureEnvironment.js';
 import { UnderwaterEnvironment } from '../environments/UnderwaterEnvironment.js';
 
 import { WorldConfig } from '../config/WorldConfig.js';
@@ -60,6 +61,11 @@ export class EnvironmentManager {
             case 'Urban':
                 this.currentEnvironment = new UrbanEnvironment(
                     this.scene, this.renderer, this.camera, WorldConfig.Urban
+                );
+                break;
+            case 'Nature':
+                this.currentEnvironment = new NatureEnvironment(
+                    this.scene, this.renderer, this.camera, WorldConfig.Nature
                 );
                 break;
             case 'Underwater':
