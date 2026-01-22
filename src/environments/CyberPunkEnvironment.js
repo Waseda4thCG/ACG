@@ -2,18 +2,18 @@ import * as THREE from 'three';
 import { BaseEnvironment } from './BaseEnvironment.js';
 
 // シェーダーのインポート
-import retroVertexShader from '../shaders/retro/retro.vert';
-import retroFragmentShader from '../shaders/retro/retro.frag';
-import gridVertexShader from '../shaders/retro/grid.vert';
-import gridFragmentShader from '../shaders/retro/grid.frag';
-import particlesVertexShader from '../shaders/retro/particles.vert';
-import particlesFragmentShader from '../shaders/retro/particles.frag';
-import voronoiVertexShader from '../shaders/retro/voronoi.vert';
-import voronoiFragmentShader from '../shaders/retro/voronoi.frag';
-import commonVertexShader from '../shaders/retro/common.vert';
-import fbmFragmentShader from '../shaders/retro/fbm.frag';
-import sdfFragmentShader from '../shaders/retro/sdf.frag';
-import reactionDiffusionFragmentShader from '../shaders/retro/reactionDiffusion.frag';
+import cyberPunkVertexShader from '../shaders/cyberpunk/cyberpunk.vert';
+import cyberPunkFragmentShader from '../shaders/cyberpunk/cyberpunk.frag';
+import gridVertexShader from '../shaders/cyberpunk/grid.vert';
+import gridFragmentShader from '../shaders/cyberpunk/grid.frag';
+import particlesVertexShader from '../shaders/cyberpunk/particles.vert';
+import particlesFragmentShader from '../shaders/cyberpunk/particles.frag';
+import voronoiVertexShader from '../shaders/cyberpunk/voronoi.vert';
+import voronoiFragmentShader from '../shaders/cyberpunk/voronoi.frag';
+import commonVertexShader from '../shaders/cyberpunk/common.vert';
+import fbmFragmentShader from '../shaders/cyberpunk/fbm.frag';
+import sdfFragmentShader from '../shaders/cyberpunk/sdf.frag';
+import reactionDiffusionFragmentShader from '../shaders/cyberpunk/reactionDiffusion.frag';
 
 // PCGモジュール
 import { LSystem, LSystemPresets } from '../pcg/LSystem.js';
@@ -25,7 +25,7 @@ const SKY_BOTTOM_COLOR = new THREE.Color('#ff1493'); // ディープピンク
 const GRID_COLOR = new THREE.Color('#00ffff'); // シアン
 const GRID_COLOR2 = new THREE.Color('#ff00ff'); // マゼンタ
 
-export class RetroEnvironment extends BaseEnvironment {
+export class CyberPunkEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
         super(scene, renderer, camera);
         this.config = config;
@@ -691,8 +691,8 @@ export class RetroEnvironment extends BaseEnvironment {
                 ...commonUniforms,
                 uMaterialType: { value: 1 } // 1 = window
             },
-            vertexShader: retroVertexShader,
-            fragmentShader: retroFragmentShader,
+            vertexShader: cyberPunkVertexShader,
+            fragmentShader: cyberPunkFragmentShader,
             side: THREE.FrontSide
         });
 
@@ -702,8 +702,8 @@ export class RetroEnvironment extends BaseEnvironment {
                 ...commonUniforms,
                 uMaterialType: { value: 2 } // 2 = roof
             },
-            vertexShader: retroVertexShader,
-            fragmentShader: retroFragmentShader,
+            vertexShader: cyberPunkVertexShader,
+            fragmentShader: cyberPunkFragmentShader,
             side: THREE.FrontSide
         });
 
@@ -713,8 +713,8 @@ export class RetroEnvironment extends BaseEnvironment {
                 ...commonUniforms,
                 uMaterialType: { value: 0 } // 0 = wall
             },
-            vertexShader: retroVertexShader,
-            fragmentShader: retroFragmentShader,
+            vertexShader: cyberPunkVertexShader,
+            fragmentShader: cyberPunkFragmentShader,
             side: THREE.FrontSide
         });
     }

@@ -43,29 +43,34 @@ export class KeyboardControls {
 
     // マウス操作モード
     this.mouseOnlyMode = false; // trueの場合、マウスだけで操作（OrbitControls風）
-    this.isLeftMouseDown = false;
-    this.isRightMouseDown = false;
-    this.lastMouseX = 0;
-    this.lastMouseY = 0;
-    this.mouseSensitivity = 0.002;
 
-    // OrbitControls風の設定
-    this.orbitTarget = new THREE.Vector3(0, 10, 0); // カメラが見る中心点
-    this.orbitRadius = 100; // カメラと中心点の距離
-    this.orbitTheta = 0; // 水平角度
-    this.orbitPhi = Math.PI / 4; // 垂直角度
-
-    // OrbitControlsのデフォルト値に合わせる
+    // OrbitControls互換の設定
+    this.target = new THREE.Vector3(0, 10, 0);
+    this.minDistance = 0;
+    this.maxDistance = Infinity;
+    this.minPolarAngle = 0;
+    this.maxPolarAngle = Math.PI;
+    this.minAzimuthAngle = -Infinity;
+    this.maxAzimuthAngle = Infinity;
+    this.enableDamping = true;
+    this.dampingFactor = 0.05;
     this.rotateSpeed = 1.0;
     this.panSpeed = 1.0;
     this.zoomSpeed = 1.0;
+    this.screenSpacePanning = true;
 
-    // Damping（滑らかな動き）- 元のコードはenableDamping = trueに設定していた
-    this.enableDamping = true;
-    this.dampingFactor = 0.05;
-    this.sphericalDelta = { theta: 0, phi: 0 }; // OrbitControlsと同じ構造
-    this.scale = 1.0;
+    // 内部状態（OrbitControlsと同じ）
+    this.spherical = new THREE.Spherical();
+    this.sphericalDelta = new THREE.Spherical();
     this.panOffset = new THREE.Vector3();
+    this.scale = 1.0;
+    this.zoomChanged = false;
+
+    // マウス状態
+    this.STATE = { NONE: -1, ROTATE: 0, DOLLY: 1, PAN: 2 };
+    this.state = this.STATE.NONE;
+    this.pointerPositions = {};
+    this.pointers = [];
 
     // モード変更時のコールバック
     this.onModeChange = null;
@@ -185,23 +190,28 @@ export class KeyboardControls {
   _onMouseDown(event) {
     if (!this.mouseOnlyMode) return;
 
-    if (event.button === 0) { // 左クリック = パン（このプロジェクトの設定）
-      this.isRightMouseDown = true; // パンモード
-      this.lastMouseX = event.clientX;
-      this.lastMouseY = event.clientY;
-    } else if (event.button === 2) { // 右クリック = 回転（このプロジェクトの設定）
-      this.isLeftMouseDown = true; // 回転モード
-      this.lastMouseX = event.clientX;
-      this.lastMouseY = event.clientY;
+    this.pointers.push(event);
+
+    if (event.button === 0) { // LEFT = PAN
+      this.state = this.STATE.PAN;
+    } else if (event.button === 1) { // MIDDLE = DOLLY
+      this.state = this.STATE.DOLLY;
+    } else if (event.button === 2) { // RIGHT = ROTATE
+      this.state = this.STATE.ROTATE;
       event.preventDefault();
     }
+
+    this.pointerPositions[event.pointerId] = { x: event.clientX, y: event.clientY };
   }
 
   _onMouseUp(event) {
-    if (event.button === 0) {
-      this.isLeftMouseDown = false;
-    } else if (event.button === 2) {
-      this.isRightMouseDown = false;
+    if (!this.mouseOnlyMode) return;
+
+    this.pointers = this.pointers.filter(p => p.pointerId !== event.pointerId);
+    delete this.pointerPositions[event.pointerId];
+
+    if (this.pointers.length === 0) {
+      this.state = this.STATE.NONE;
     }
   }
 
@@ -213,96 +223,111 @@ export class KeyboardControls {
 
   _onWheel(event) {
     if (!this.mouseOnlyMode) return;
+    if (this.state !== this.STATE.NONE && this.state !== this.STATE.ROTATE) return;
 
     event.preventDefault();
 
-    // OrbitControlsと同じズーム処理
     if (event.deltaY < 0) {
-      this.dollyOut(this.getZoomScale());
+      this._dollyOut(this._getZoomScale());
     } else if (event.deltaY > 0) {
-      this.dollyIn(this.getZoomScale());
+      this._dollyIn(this._getZoomScale());
     }
+
+    this.zoomChanged = true;
   }
 
-  getZoomScale() {
-    // OrbitControlsと同じ計算式
+  _getZoomScale() {
     return Math.pow(0.95, this.zoomSpeed);
   }
 
-  dollyIn(dollyScale) {
+  _dollyIn(dollyScale) {
     this.scale *= dollyScale;
   }
 
-  dollyOut(dollyScale) {
+  _dollyOut(dollyScale) {
     this.scale /= dollyScale;
   }
 
-  rotateLeft(angle) {
+  _rotateLeft(angle) {
     this.sphericalDelta.theta -= angle;
   }
 
-  rotateUp(angle) {
+  _rotateUp(angle) {
     this.sphericalDelta.phi -= angle;
   }
 
-  panLeft(distance, objectMatrix) {
+  _panLeft(distance, objectMatrix) {
     const v = new THREE.Vector3();
-    v.setFromMatrixColumn(objectMatrix, 0); // x軸（右方向）
-
-    // OrbitControlsと同じ計算: カメラの視野角と距離を考慮
-    const element = this.domElement;
-    const targetDistance = this.camera.position.distanceTo(this.orbitTarget);
-
-    // PerspectiveCameraの場合
-    if (this.camera.isPerspectiveCamera) {
-      // 画面の高さに対応する実際の距離を計算
-      const fov = this.camera.fov * Math.PI / 180;
-      const panOffset = 2 * distance * Math.tan(fov / 2) * targetDistance / element.clientHeight;
-      v.multiplyScalar(-panOffset * this.panSpeed);
-    }
-
+    v.setFromMatrixColumn(objectMatrix, 0);
+    v.multiplyScalar(-distance);
     this.panOffset.add(v);
   }
 
-  panUp(distance, objectMatrix) {
+  _panUp(distance, objectMatrix) {
     const v = new THREE.Vector3();
-    v.setFromMatrixColumn(objectMatrix, 1); // y軸（上方向）
 
-    // OrbitControlsと同じ計算: カメラの視野角と距離を考慮
-    const element = this.domElement;
-    const targetDistance = this.camera.position.distanceTo(this.orbitTarget);
-
-    // PerspectiveCameraの場合
-    if (this.camera.isPerspectiveCamera) {
-      // 画面の高さに対応する実際の距離を計算
-      const fov = this.camera.fov * Math.PI / 180;
-      const panOffset = 2 * distance * Math.tan(fov / 2) * targetDistance / element.clientHeight;
-      v.multiplyScalar(panOffset * this.panSpeed);
+    if (this.screenSpacePanning === true) {
+      v.setFromMatrixColumn(objectMatrix, 1);
+    } else {
+      v.setFromMatrixColumn(objectMatrix, 0);
+      v.crossVectors(this.camera.up, v);
     }
 
+    v.multiplyScalar(distance);
     this.panOffset.add(v);
+  }
+
+  _pan(deltaX, deltaY) {
+    const offset = new THREE.Vector3();
+    const element = this.domElement;
+
+    if (this.camera.isPerspectiveCamera) {
+      const position = this.camera.position;
+      offset.copy(position).sub(this.target);
+      let targetDistance = offset.length();
+
+      targetDistance *= Math.tan((this.camera.fov / 2) * Math.PI / 180.0);
+
+      this._panLeft(2 * deltaX * targetDistance / element.clientHeight, this.camera.matrix);
+      this._panUp(2 * deltaY * targetDistance / element.clientHeight, this.camera.matrix);
+    } else if (this.camera.isOrthographicCamera) {
+      this._panLeft(deltaX * (this.camera.right - this.camera.left) / this.camera.zoom / element.clientWidth, this.camera.matrix);
+      this._panUp(deltaY * (this.camera.top - this.camera.bottom) / this.camera.zoom / element.clientHeight, this.camera.matrix);
+    }
   }
 
   _onMouseMove(event) {
     // マウスだけモード（OrbitControls風）
     if (this.mouseOnlyMode) {
-      const deltaX = event.clientX - this.lastMouseX;
-      const deltaY = event.clientY - this.lastMouseY;
+      const pointer = this.pointers.find(p => p.pointerId === event.pointerId);
+      if (!pointer) return;
 
-      if (this.isLeftMouseDown) {
-        // isLeftMouseDown = 回転（このプロジェクトの設定では右クリック→回転）
-        // OrbitControlsと同じ計算式: 2 * PI * mouseDelta / clientHeight
+      // 前回の位置を取得
+      const prevPosition = this.pointerPositions[event.pointerId];
+      if (!prevPosition) return;
+
+      const deltaX = event.clientX - prevPosition.x;
+      const deltaY = event.clientY - prevPosition.y;
+
+      if (this.state === this.STATE.ROTATE) {
         const element = this.domElement;
-        this.rotateLeft(2 * Math.PI * deltaX / element.clientHeight * this.rotateSpeed);
-        this.rotateUp(2 * Math.PI * deltaY / element.clientHeight * this.rotateSpeed);
-      } else if (this.isRightMouseDown) {
-        // isRightMouseDown = パン（このプロジェクトの設定では左クリック→パン）
-        this.panLeft(deltaX, this.camera.matrix);
-        this.panUp(deltaY, this.camera.matrix);
+        this._rotateLeft(2 * Math.PI * deltaX / element.clientHeight * this.rotateSpeed);
+        this._rotateUp(2 * Math.PI * deltaY / element.clientHeight * this.rotateSpeed);
+      } else if (this.state === this.STATE.PAN) {
+        this._pan(deltaX, deltaY);
+      } else if (this.state === this.STATE.DOLLY) {
+        // ドリー（ミドルクリック）
+        const dollyDelta = deltaY;
+        if (dollyDelta < 0) {
+          this._dollyOut(this._getZoomScale());
+        } else if (dollyDelta > 0) {
+          this._dollyIn(this._getZoomScale());
+        }
       }
 
-      this.lastMouseX = event.clientX;
-      this.lastMouseY = event.clientY;
+      // 位置を更新
+      this.pointerPositions[event.pointerId].x = event.clientX;
+      this.pointerPositions[event.pointerId].y = event.clientY;
       return;
     }
 
@@ -402,51 +427,81 @@ export class KeyboardControls {
   update() {
     // マウスだけモード（OrbitControls風）
     if (this.mouseOnlyMode) {
-      // OrbitControlsと同じ更新処理
+      const offset = new THREE.Vector3();
+      const quat = new THREE.Quaternion().setFromUnitVectors(this.camera.up, new THREE.Vector3(0, 1, 0));
+      const quatInverse = quat.clone().invert();
 
-      // パンオフセットを適用
-      this.orbitTarget.add(this.panOffset);
+      const lastPosition = new THREE.Vector3();
+      const lastQuaternion = new THREE.Quaternion();
 
-      // スケールを半径に適用
-      this.orbitRadius *= this.scale;
+      const twoPI = 2 * Math.PI;
 
-      // 距離制限
-      this.orbitRadius = Math.max(10, Math.min(500, this.orbitRadius));
+      const position = this.camera.position;
 
-      // Dampingを適用
+      offset.copy(position).sub(this.target);
+
+      // カメラの上方向に合わせて回転
+      offset.applyQuaternion(quat);
+
+      // 現在の球面座標を取得
+      this.spherical.setFromVector3(offset);
+
       if (this.enableDamping) {
-        this.orbitTheta += this.sphericalDelta.theta * this.dampingFactor;
-        this.orbitPhi += this.sphericalDelta.phi * this.dampingFactor;
+        this.spherical.theta += this.sphericalDelta.theta * this.dampingFactor;
+        this.spherical.phi += this.sphericalDelta.phi * this.dampingFactor;
       } else {
-        this.orbitTheta += this.sphericalDelta.theta;
-        this.orbitPhi += this.sphericalDelta.phi;
+        this.spherical.theta += this.sphericalDelta.theta;
+        this.spherical.phi += this.sphericalDelta.phi;
       }
 
-      // 垂直角度を制限（0からπまで）
-      this.orbitPhi = Math.max(0, Math.min(Math.PI, this.orbitPhi));
+      // 角度制限
+      let min = this.minAzimuthAngle;
+      let max = this.maxAzimuthAngle;
 
-      // 球面座標からカメラ位置を計算
-      const x = this.orbitRadius * Math.sin(this.orbitPhi) * Math.sin(this.orbitTheta);
-      const y = this.orbitRadius * Math.cos(this.orbitPhi);
-      const z = this.orbitRadius * Math.sin(this.orbitPhi) * Math.cos(this.orbitTheta);
+      if (isFinite(min) && isFinite(max)) {
+        if (min < -Math.PI) min += twoPI; else if (min > Math.PI) min -= twoPI;
+        if (max < -Math.PI) max += twoPI; else if (max > Math.PI) max -= twoPI;
 
-      this.camera.position.set(
-        this.orbitTarget.x + x,
-        this.orbitTarget.y + y,
-        this.orbitTarget.z + z
-      );
+        if (min <= max) {
+          this.spherical.theta = Math.max(min, Math.min(max, this.spherical.theta));
+        } else {
+          this.spherical.theta = (this.spherical.theta > (min + max) / 2) ?
+            Math.max(min, this.spherical.theta) :
+            Math.min(max, this.spherical.theta);
+        }
+      }
 
-      // カメラを中心点に向ける
-      this.camera.lookAt(this.orbitTarget);
+      // 極角を制限
+      this.spherical.phi = Math.max(this.minPolarAngle, Math.min(this.maxPolarAngle, this.spherical.phi));
+      this.spherical.makeSafe();
 
-      // Delta値をリセット
-      if (this.enableDamping) {
+      // 距離を調整
+      this.spherical.radius *= this.scale;
+      this.spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this.spherical.radius));
+
+      // ターゲットをパンオフセット分移動
+      if (this.enableDamping === true) {
+        this.target.addScaledVector(this.panOffset, this.dampingFactor);
+      } else {
+        this.target.add(this.panOffset);
+      }
+
+      // 球面座標からデカルト座標に変換
+      offset.setFromSpherical(this.spherical);
+
+      // 元の方向に戻す
+      offset.applyQuaternion(quatInverse);
+
+      position.copy(this.target).add(offset);
+
+      this.camera.lookAt(this.target);
+
+      if (this.enableDamping === true) {
         this.sphericalDelta.theta *= (1 - this.dampingFactor);
         this.sphericalDelta.phi *= (1 - this.dampingFactor);
         this.panOffset.multiplyScalar(1 - this.dampingFactor);
       } else {
-        this.sphericalDelta.theta = 0;
-        this.sphericalDelta.phi = 0;
+        this.sphericalDelta.set(0, 0, 0);
         this.panOffset.set(0, 0, 0);
       }
 
@@ -605,23 +660,29 @@ export class KeyboardControls {
         document.exitPointerLock();
       }
 
-      // 現在のカメラ位置からOrbitControlsの初期設定を計算
+      // 現在のカメラ位置からターゲットを設定
       const direction = new THREE.Vector3();
       this.camera.getWorldDirection(direction);
 
-      // カメラの前方にターゲットを設定
-      this.orbitTarget.copy(this.camera.position).add(direction.multiplyScalar(50));
+      // カメラの前方にターゲットを配置
+      this.target.copy(this.camera.position).add(direction.multiplyScalar(50));
 
-      // 現在のカメラ位置から球面座標を計算
-      const offset = new THREE.Vector3().subVectors(this.camera.position, this.orbitTarget);
-      this.orbitRadius = offset.length();
-      this.orbitTheta = Math.atan2(offset.x, offset.z);
-      this.orbitPhi = Math.acos(Math.max(-1, Math.min(1, offset.y / this.orbitRadius)));
+      // 球面座標を初期化
+      const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
+      const quat = new THREE.Quaternion().setFromUnitVectors(this.camera.up, new THREE.Vector3(0, 1, 0));
+      offset.applyQuaternion(quat);
+      this.spherical.setFromVector3(offset);
 
-      // Delta値とオフセットをリセット
-      this.sphericalDelta = { theta: 0, phi: 0 };
+      // デルタ値とオフセットをリセット
+      this.sphericalDelta.set(0, 0, 0);
       this.scale = 1.0;
       this.panOffset.set(0, 0, 0);
+      this.zoomChanged = false;
+
+      // マウス状態をリセット
+      this.state = this.STATE.NONE;
+      this.pointers = [];
+      this.pointerPositions = {};
     }
 
     // コールバック実行

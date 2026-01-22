@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 // 各環境クラスをimport
 import { UrbanEnvironment } from '../environments/UrbanEnvironment.js';
 import { NatureEnvironment } from '../environments/NatureEnvironment.js';
-import { RetroEnvironment } from '../environments/RetroEnvironment.js';
+import { CyberPunkEnvironment } from '../environments/CyberPunkEnvironment.js';
 import { UnderwaterEnvironment } from '../environments/UnderwaterEnvironment.js';
 
 import { WorldConfig } from '../config/WorldConfig.js';
@@ -169,7 +169,7 @@ export class EnvironmentManager {
                 break;
             case 'CyberPunk':
                 config = WorldConfig.CyberPunk;
-                this.currentEnvironment = new RetroEnvironment(
+                this.currentEnvironment = new CyberPunkEnvironment(
                     this.scene, this.renderer, this.camera, config
                 );
                 break;
