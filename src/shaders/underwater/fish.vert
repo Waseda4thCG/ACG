@@ -1,7 +1,10 @@
+// 魚用頂点シェーダー
 uniform float uTime;
 attribute float aSpeed;
 attribute float aOffset;
+
 varying vec3 vNormal;
+varying vec3 vWorldPosition;
 
 #include <fog_pars_vertex>
 
@@ -14,6 +17,7 @@ void main() {
     pos.x += wiggle * pos.z;
 
     vec4 worldPosition = instanceMatrix * vec4(pos, 1.0);
+    vWorldPosition = worldPosition.xyz;
 
     vec4 mvPosition = modelViewMatrix * worldPosition;
 

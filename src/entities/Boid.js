@@ -9,6 +9,10 @@ const _avoidance = new THREE.Vector3();
 const _tmpDirL = new THREE.Vector3();
 const _tmpDirR = new THREE.Vector3();
 const _tmp = new THREE.Vector3();
+const _separation = new THREE.Vector3();
+const _alignment = new THREE.Vector3();
+const _cohesion = new THREE.Vector3();
+const _bestDir = new THREE.Vector3();
 
 export class Boid {
     constructor(sceneWidth, sceneHeight, sceneDepth, index, boidConfig = {}) {
@@ -71,56 +75,84 @@ export class Boid {
     flock(boids) {
         let total = 0;
         const eps = 1e-4;
-        const separation = new THREE.Vector3();
-        const alignment = new THREE.Vector3();
-        const cohesion = new THREE.Vector3();
+
+        let sepX = 0, sepY = 0, sepZ = 0;
+        let aliX = 0, aliY = 0, aliZ = 0;
+        let cohX = 0, cohY = 0, cohZ = 0;
 
         // 衝突判定用
         const collisionDistance = this.collisionRadius * 2.0;
         const collisionDistanceSq = collisionDistance * collisionDistance;
+        const perceptionSq = this.perceptionRadius * this.perceptionRadius;
+
+        // 値のキャッシュ
+        const px = this.position.x;
+        const py = this.position.y;
+        const pz = this.position.z;
 
         for (const other of boids) {
-            // 魚同士の距離を計算
-            const dSq = this.position.distanceToSquared(other.position);
+            if (other === this) continue;
 
-            // 視界範囲内かつ自分自身ではない
-            if (other !== this && dSq < this.perceptionRadius * this.perceptionRadius && dSq > 0) {
+            const op = other.position;
+            const dx = px - op.x;
+            const dy = py - op.y;
+            const dz = pz - op.z;
 
-                // 他の魚との距離の総和
+            // distanceToSquaredのインライン展開
+            const dSq = dx * dx + dy * dy + dz * dz;
+
+            if (dSq < perceptionSq && dSq > 0) {
+                // Separation
                 if (dSq < collisionDistanceSq) {
-                    _diff.subVectors(this.position, other.position);
-                    // 近づくほど反発力が強まる
-                    _diff.divideScalar(dSq + eps);
-
-                    _diff.multiplyScalar(this.avoidanceWeight);
-
-                    separation.add(_diff);
+                    const weight = this.avoidanceWeight / (dSq + eps);
+                    sepX += dx * weight;
+                    sepY += dy * weight;
+                    sepZ += dz * weight;
                 }
 
-                alignment.add(other.velocity);
-                cohesion.add(other.position);
+                // Alignment
+                const ov = other.velocity;
+                aliX += ov.x;
+                aliY += ov.y;
+                aliZ += ov.z;
+
+                // Cohesion
+                cohX += op.x;
+                cohY += op.y;
+                cohZ += op.z;
+
                 total++;
             }
         }
 
         if (total > 0) {
-            // Separation: 近づいたら逆向きに力を加える
-            if (separation.lengthSq() > 0) {
-                 separation.divideScalar(total).setLength(this.maxSpeed).sub(this.velocity);
+            const invTotal = 1.0 / total;
+
+            // Separation：近づいたら逆向きに力を加える
+            if (sepX !== 0 || sepY !== 0 || sepZ !== 0) {
+                _separation.set(sepX, sepY, sepZ).multiplyScalar(invTotal).setLength(this.maxSpeed).sub(this.velocity);
+            } else {
+                _separation.set(0, 0, 0);
             }
-            // Alignment: 周りの魚の平均速度に近づく
-            alignment.divideScalar(total).setLength(this.cruiseSpeed).sub(this.velocity);
-            // Cohesion: 周りの魚の平均位置に近づく
-            cohesion.divideScalar(total).sub(this.position).setLength(this.cruiseSpeed).sub(this.velocity);
+
+            // Alignment：周りの魚の平均速度に近づく
+            _alignment.set(aliX, aliY, aliZ).multiplyScalar(invTotal).setLength(this.cruiseSpeed).sub(this.velocity);
+
+            // Cohesion：周りの魚の平均位置に近づく
+            _cohesion.set(cohX, cohY, cohZ).multiplyScalar(invTotal).sub(this.position).setLength(this.cruiseSpeed).sub(this.velocity);
+        } else {
+            _separation.set(0, 0, 0);
+            _alignment.set(0, 0, 0);
+            _cohesion.set(0, 0, 0);
         }
 
-        separation.multiplyScalar(this.separationWeight).clampLength(0, this.maxForce);
-        alignment.multiplyScalar(this.alignmentWeight).clampLength(0, this.maxForce);
-        cohesion.multiplyScalar(this.cohesionWeight).clampLength(0, this.maxForce);
+        _separation.multiplyScalar(this.separationWeight).clampLength(0, this.maxForce);
+        _alignment.multiplyScalar(this.alignmentWeight).clampLength(0, this.maxForce);
+        _cohesion.multiplyScalar(this.cohesionWeight).clampLength(0, this.maxForce);
 
-        this.acceleration.add(separation);
-        this.acceleration.add(alignment);
-        this.acceleration.add(cohesion);
+        this.acceleration.add(_separation);
+        this.acceleration.add(_alignment);
+        this.acceleration.add(_cohesion);
 
         // if (this.index === 0) {
         //     const fmt = (v) => `x:${v.x.toFixed(5)}, y:${v.y.toFixed(5)}, z:${v.z.toFixed(5)}`;
@@ -156,7 +188,7 @@ export class Boid {
                 return;
             }
 
-            let bestDir = null;
+            let found = false;
 
             // 15方向のランダムに調べる
             for(let i=0; i < 15; i++) {
@@ -173,13 +205,14 @@ export class Boid {
 
                 // 障害物に当たらないか、当たっても距離がある場合、その方向に進む
                 if(hits.length === 0 || hits[0].distance > this.perceptionRadius) {
-                    bestDir = _tmp.clone();
+                    _bestDir.copy(_tmp);
+                    found = true;
                     break;
                 }
             }
 
-            if (bestDir) {
-                _avoidance.copy(bestDir).multiplyScalar(this.maxSpeed).sub(this.velocity);
+            if (found) {
+                _avoidance.copy(_bestDir).multiplyScalar(this.maxSpeed).sub(this.velocity);
                 _avoidance.normalize().multiplyScalar(this.maxForce * 5.0);
             } else {
                 const hitNormal = intersects[0].face.normal;

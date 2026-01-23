@@ -4,29 +4,30 @@ import * as THREE from 'three';
  * シンプルなキーボード＋マウスコントロール（FPS風）
  */
 export class KeyboardControls {
-  constructor(camera, domElement) {
+  constructor(camera, domElement, config) {
     this.camera = camera;
     this.domElement = domElement;
+    this.config = config;
 
-    // 移動速度
-    this.moveSpeed = 0.5;
-    this.lookSpeed = 0.002;
+    // 移動速度（configから取得）
+    this.moveSpeed = config.moveSpeed ?? 0.5;
+    this.lookSpeed = config.lookSpeed ?? 0.002;
 
     // カメラ回転角度（オイラー角）
-    this.pitch = 0; // 上下回転
-    this.yaw = 0;   // 左右回転
+    this.pitch = config.pitch;
+    this.yaw = config.yaw;
 
     // 床固定モード
     this.grounded = false;
-    this.eyeHeight = 1.7; // 人間の視点の高さ（メートル）
-    this.floorLevel = 0; // 床の高さ
-    this.footHeight = 0.2; // 足元の余裕（階段などを登れるように）
+    this.eyeHeight = config.eyeHeight ?? 1.7;
+    this.floorLevel = 0;
+    this.footHeight = config.footHeight ?? 0.2;
 
     // 衝突検出
-    this.collisionObjects = []; // 衝突判定対象のメッシュ
+    this.collisionObjects = [];
     this.raycaster = new THREE.Raycaster();
-    this.collisionDistance = 2.0; // 衝突検出距離
-    this.playerRadius = 1.0; // プレイヤーの半径
+    this.collisionDistance = config.collisionDistance ?? 2.0;
+    this.playerRadius = config.playerRadius ?? 1.0;
 
     // キー入力状態
     this.keys = {
@@ -42,22 +43,24 @@ export class KeyboardControls {
     this.isPointerLocked = false;
 
     // マウス操作モード
-    this.mouseOnlyMode = false; // trueの場合、マウスだけで操作（OrbitControls風）
+    this.mouseOnlyMode = false;
 
-    // OrbitControls互換の設定
+    // OrbitControls互換の設定（configから取得）
     this.target = new THREE.Vector3(0, 10, 0);
-    this.minDistance = 0;
-    this.maxDistance = Infinity;
+    this.minDistance = config.minDistance ?? 0.05;
+    this.maxDistance = config.maxDistance ?? 500;
     this.minPolarAngle = 0;
     this.maxPolarAngle = Math.PI;
     this.minAzimuthAngle = -Infinity;
     this.maxAzimuthAngle = Infinity;
     this.enableDamping = true;
-    this.dampingFactor = 0.05;
-    this.rotateSpeed = 1.0;
-    this.panSpeed = 1.0;
-    this.zoomSpeed = 1.0;
+    this.dampingFactor = config.dampingFactor ?? 0.05;
+    this.rotateSpeed = config.rotateSpeed ?? 1.0;
+    this.panSpeed = config.panSpeed ?? 1.0;
+    this.zoomSpeed = config.zoomSpeed ?? 1.0;
     this.screenSpacePanning = true;
+    this.minPanDistance = config.minPanDistance ?? 10.0;
+    this.minY = config.minY ?? 0.5;
 
     // 内部状態（OrbitControlsと同じ）
     this.spherical = new THREE.Spherical();
@@ -225,11 +228,16 @@ export class KeyboardControls {
     if (!this.mouseOnlyMode) return;
     if (this.state !== this.STATE.NONE && this.state !== this.STATE.ROTATE) return;
 
+    // UI要素上のスクロールはカメラ操作に反映させない（サイドバーのスクロールを優先）
+    if (event.target.closest('#unified-ui') || event.target.closest('#minimap-ui')) {
+      return;
+    }
+
     event.preventDefault();
 
-    if (event.deltaY < 0) {
+    if (event.deltaY > 0) {
       this._dollyOut(this._getZoomScale());
-    } else if (event.deltaY > 0) {
+    } else if (event.deltaY < 0) {
       this._dollyIn(this._getZoomScale());
     }
 
@@ -286,6 +294,8 @@ export class KeyboardControls {
       offset.copy(position).sub(this.target);
       let targetDistance = offset.length();
 
+      // 最低パン速度を保証（configから取得）
+      targetDistance = Math.max(targetDistance, this.minPanDistance);
       targetDistance *= Math.tan((this.camera.fov / 2) * Math.PI / 180.0);
 
       this._panLeft(2 * deltaX * targetDistance / element.clientHeight, this.camera.matrix);
@@ -486,6 +496,11 @@ export class KeyboardControls {
         this.target.add(this.panOffset);
       }
 
+      // ターゲットが地面より下に行かないように制限
+      if (this.target.y < this.minY) {
+        this.target.y = this.minY;
+      }
+
       // 球面座標からデカルト座標に変換
       offset.setFromSpherical(this.spherical);
 
@@ -493,6 +508,11 @@ export class KeyboardControls {
       offset.applyQuaternion(quatInverse);
 
       position.copy(this.target).add(offset);
+
+      // カメラも地面より下に行かないように制限
+      if (position.y < this.minY) {
+        position.y = this.minY;
+      }
 
       this.camera.lookAt(this.target);
 

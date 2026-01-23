@@ -3,6 +3,7 @@ import { EnvironmentManager } from './manager/EnvironmentManager.js';
 import { KeyboardControls } from './controllers/KeyboardControls.js';
 import { MovementUI } from './ui/MovementUI.js';
 import { MinimapUI } from './ui/MinimapUI.js';
+import { WorldConfig } from './config/WorldConfig.js';
 
 const CAMERA_FOV = 75;
 const CAMERA_NEAR = 0.1;
@@ -19,9 +20,9 @@ document.body.appendChild(renderer.domElement);
 
 const envManager = new EnvironmentManager();
 
-const controls = new KeyboardControls(camera, renderer.domElement);
-const movementUI = new MovementUI(envManager); // EnvironmentManagerを渡す（SSOT）
+const controls = new KeyboardControls(camera, renderer.domElement, WorldConfig.Camera);
 const minimapUI = new MinimapUI(scene, camera);
+const movementUI = new MovementUI(envManager, minimapUI); // EnvironmentManagerとMinimapUIを渡す
 
 // キーボードでのモード変更時のコールバック（GキーでUI更新）
 controls.onModeChange = (grounded) => {
@@ -56,6 +57,10 @@ envManager.init(scene, renderer, camera).then(() => {
     // UIを初期環境に同期（SSOT）
     movementUI.setEnvironment('Urban');
     setupCollisions();
+
+    // 建物のロードが完了したので、ミニマップに背景（建物）を一度だけ同期する
+    // これ以降、環境が変わってもミニマップの背景は更新されないようにする
+    minimapUI.syncSceneObjects();
 });
 
 function setupCollisions() {

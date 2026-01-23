@@ -99,7 +99,7 @@ export class UrbanEnvironment extends BaseEnvironment {
         this.materials.wall = new THREE.ShaderMaterial({
             transparent: true,
             depthWrite: true,
-            side: THREE.FrontSide,
+            side: THREE.DoubleSide,
             uniforms: {
                 ...commonUniforms,
                 uWallColor: { value: new THREE.Color('#c5c5c5') },
