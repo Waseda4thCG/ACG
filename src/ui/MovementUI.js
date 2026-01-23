@@ -36,11 +36,11 @@ export class MovementUI {
         <div class="ui-header">
         <div class="app-title">
           <div class="title-icon">
-            <img src="/icon.png" alt="もしリコ" class="icon-img">
+            <img src="/icon.png" alt="Rico Palette" class="icon-img">
           </div>
           <div class="title-content">
-            <div class="title-text">もしリコ</div>
-            <div class="title-subtitle">～もしもリコキャンが⚪︎⚪︎だったら～</div>
+            <div class="title-text">Rico Palette</div>
+            <div class="title-subtitle">~ What if Rico were in 〇〇 ~</div>
           </div>
         </div>
       </div>
@@ -255,6 +255,27 @@ export class MovementUI {
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         opacity: 1;
         transform: translateX(0);
+        /* スクロール可能にする設定 */
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        padding-right: 4px; /* スクロールバーとの余白 */
+        scrollbar-width: thin; /* Firefox用 */
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+
+      /* Webkit系（Chrome, Safari）のスクロールバースタイル */
+      .sidebar-content::-webkit-scrollbar {
+        width: 6px;
+      }
+      .sidebar-content::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .sidebar-content::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+      .sidebar-content::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(255, 255, 255, 0.4);
       }
 
       #unified-ui.closed .sidebar-content {
