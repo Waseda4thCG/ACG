@@ -73,24 +73,22 @@ export const WorldConfig = {
         modelScale: 1.0,
 
         floor: {
-            floorSize: 500,
-            floorColor: '#1a3a52',  // 深海の青
-            gridColor1: '#2a5a7a',  // 明るい青
-            gridColor2: '#0a2a42',  // 暗い青
             showGrid: false
         },
+
 
         // 魚が泳ぐ範囲
         bounds: {
             width: 400.0,
-            height: 100.0,
+            height: 150.0,
             depth: 180.0
         },
 
         // フォグ
         fog: {
             near: 1.0,
-            far: 250.0
+            far: 180.0,
+            density: 0.01
         },
 
         // 魚のメッシュサイズ
@@ -125,14 +123,14 @@ export const WorldConfig = {
         lighting: {
             lightDirection: { x: 0.5, y: 1.0, z: 0.5 },
             ambientColor: '#aed2f1',
-            ambientIntensity: 0.3,
-            diffuseIntensity: 0.9,
+            ambientIntensity: 0.4,
+            diffuseIntensity: 1.1,
             causticColor: '#ffffff',
             causticIntensity: 0.4,
             // ゴッドレイ設定
-            godRayIntensity: 0.7,   // 光の強さ（0.0〜2.0）
+            godRayIntensity: 0.5,   // 光の強さ（0.0〜2.0）
             godRaySpeed: 0.6,       // 移動速度（0.05〜0.3）
-            godRayScale: 0.1       // 光の筋のサイズ（小さいほど大きな筋）
+            godRayScale: 0.3       // 光の筋のサイズ（小さいほど大きな筋）
         },
 
         // 色設定

@@ -140,6 +140,11 @@ export class MinimapUI {
   syncSceneObjects() {
     // メインシーンのオブジェクトをミニマップシーンに同期
     this.mainScene.traverse((obj) => {
+      // ミニマップから除外するオブジェクトはスキップ（背景Sphereなど）
+      if (obj.userData && obj.userData.excludeFromMinimap) {
+        return;
+      }
+
       if (obj.isMesh && !this.sceneObjectsMap.has(obj.uuid)) {
         // 簡易的なクローン（ジオメトリとマテリアルを共有）
         const minimapObj = new THREE.Mesh(

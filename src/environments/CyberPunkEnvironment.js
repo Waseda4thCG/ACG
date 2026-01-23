@@ -640,6 +640,7 @@ export class CyberPunkEnvironment extends BaseEnvironment {
         });
 
         const sky = new THREE.Mesh(skyGeo, skyMat);
+        sky.userData.excludeFromMinimap = true; // ミニマップに表示しない
         this.scene.add(sky);
         this.skyMesh = sky;
 
@@ -653,6 +654,7 @@ export class CyberPunkEnvironment extends BaseEnvironment {
         const sun = new THREE.Mesh(sunGeo, sunMat);
         sun.position.set(0, 100, -300);
         sun.lookAt(this.camera.position);
+        sun.userData.excludeFromMinimap = true; // ミニマップに表示しない
         this.scene.add(sun);
         this.sunMesh = sun;
 
@@ -666,6 +668,7 @@ export class CyberPunkEnvironment extends BaseEnvironment {
         const glow = new THREE.Mesh(glowGeo, glowMat);
         glow.position.copy(sun.position);
         glow.lookAt(this.camera.position);
+        glow.userData.excludeFromMinimap = true; // ミニマップに表示しない
         this.scene.add(glow);
         this.glowMesh = glow;
     }
