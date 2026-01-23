@@ -20,6 +20,7 @@ export const WorldConfig = {
     },
     Urban: {
         modelScale: 1.0,
+        useSharedLights: true, // 共通ライトを使用
 
         floor: {
             floorSize: 500,
@@ -37,6 +38,7 @@ export const WorldConfig = {
 
     Nature: {
         modelScale: 1.0,
+        useSharedLights: true, // 共通ライトを使用
 
         floor: {
             floorSize: 500,
@@ -53,6 +55,7 @@ export const WorldConfig = {
 
     CyberPunk: {
         modelScale: 1.0,
+        useSharedLights: true, // 共通ライトを使用
 
         floor: {
             floorSize: 500,
@@ -71,6 +74,7 @@ export const WorldConfig = {
 
     Underwater: {
         modelScale: 1.0,
+        useSharedLights: false, // 独自のライトを使用
 
         floor: {
             showGrid: false

@@ -22,10 +22,10 @@ export class EnvironmentManager {
         this.currentModeName = null; // 現在の環境名（SSOT）
 
         this.sharedAssets = {
-            buildingRoot: null
+            buildingRoot: null,
+            floorMesh: null
         };
 
-        // 床とライト
         this.floorMesh = null;
         this.gridHelper = null;
         this.lights = [];
@@ -92,6 +92,8 @@ export class EnvironmentManager {
         this.floorMesh.position.y = 0;
         this.floorMesh.receiveShadow = true;
         this.scene.add(this.floorMesh);
+
+        this.sharedAssets.floorMesh = this.floorMesh;
 
         // グリッド（オプション）
         if (showGrid) {
@@ -184,7 +186,10 @@ export class EnvironmentManager {
         // 床とライトを作成
         if (config) {
             this.createFloor(config.floor);
-            this.createLights();
+            // 共通ライトを使用する環境のみライトを作成
+            if (config.useSharedLights !== false) {
+                this.createLights();
+            }
         }
 
         // 新しい環境のセットアップ
