@@ -100,5 +100,24 @@ export const WorldConfig = {
             depthMin: -15.0,
             depthMax: 40.0
         }
+    },
+
+    Universe: {
+        modelScale: 1.0,
+
+        // background sphere size
+        backgroundRadius: 800.0,
+
+        shader: {
+            // building material
+            baseColor: [0.3, 0.35, 0.4],
+            emissiveColor: [0.2, 0.5, 1.0],
+            metallic: 0.8,
+
+            // starry sky
+            starDensity: 0.85,
+            nebulaColor1: [0.1, 0.0, 0.3],
+            nebulaColor2: [0.0, 0.2, 0.4]
+        }
     }
 };

@@ -6,7 +6,7 @@ export class MovementUI {
     this.container = null;
     this.currentMode = 'free';
     this.environmentManager = environmentManager; // SSOT for environment
-    this.environments = ['Urban', 'Nature', 'CyberPunk', 'Underwater']; // 利用可能な環境リスト
+    this.environments = ['Urban', 'Nature', 'CyberPunk', 'Underwater', 'Universe']; // 利用可能な環境リスト
     this.onEnvironmentChange = null;
     this.onFlightModeChange = null;
     this.onControlModeChange = null; // 操作モード変更時のコールバック
@@ -117,6 +117,11 @@ export class MovementUI {
           <button class="env-btn" data-env="Underwater">
             <span class="env-icon">🌊</span>
             <span class="env-name">Underwater</span>
+            <span class="env-check">✓</span>
+          </button>
+          <button class="env-btn" data-env="Universe">
+            <span class="env-icon">🌌</span>
+            <span class="env-name">Universe</span>
             <span class="env-check">✓</span>
           </button>
         </div>

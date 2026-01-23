@@ -6,6 +6,7 @@ import { UrbanEnvironment } from '../environments/UrbanEnvironment.js';
 import { NatureEnvironment } from '../environments/NatureEnvironment.js';
 import { CyberPunkEnvironment } from '../environments/CyberPunkEnvironment.js';
 import { UnderwaterEnvironment } from '../environments/UnderwaterEnvironment.js';
+import { UniverseEnvironment } from '../environments/UniverseEnvironment.js';
 
 import { WorldConfig } from '../config/WorldConfig.js';
 
@@ -177,6 +178,11 @@ export class EnvironmentManager {
                 config = WorldConfig.Underwater;
                 this.currentEnvironment = new UnderwaterEnvironment(
                     this.scene, this.renderer, this.camera, config
+                );
+                break;
+            case 'Universe':
+                this.currentEnvironment = new UniverseEnvironment(
+                    this.scene, this.renderer, this.camera, WorldConfig.Universe
                 );
                 break;
         }
