@@ -5,9 +5,10 @@ import fishVertexShader from '../shaders/underwater/fish.vert';
 import fishFragmentShader from '../shaders/underwater/fish.frag';
 
 export class FishController {
-    constructor(scene, config) {
+    constructor(scene, config, lightingUniforms = {}) {
         this.scene = scene;
         this.config = config;
+        this.lightingUniforms = lightingUniforms;
         this.raycaster = new THREE.Raycaster();
         this.count = config.fish?.count ?? 500;
         this.boids = [];
@@ -42,12 +43,15 @@ export class FishController {
         const fishGeometry = new THREE.ConeGeometry(meshRadius, meshLength, 8);
         fishGeometry.rotateX(Math.PI / 2);
 
+        // 共通ライティングuniformsを使用
         const fishMaterial = new THREE.ShaderMaterial({
             vertexShader: fishVertexShader,
             fragmentShader: fishFragmentShader,
             uniforms: {
                 ...THREE.UniformsLib.fog,
-                uTime: { value: 0.0 } },
+                ...this.lightingUniforms,
+                uTime: { value: 0.0 }
+            },
             side: THREE.DoubleSide,
             fog: true
         });
