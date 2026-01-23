@@ -57,6 +57,10 @@ envManager.init(scene, renderer, camera).then(() => {
     // UIを初期環境に同期（SSOT）
     movementUI.setEnvironment('Urban');
     setupCollisions();
+
+    // 建物のロードが完了したので、ミニマップに背景（建物）を一度だけ同期する
+    // これ以降、環境が変わってもミニマップの背景は更新されないようにする
+    minimapUI.syncSceneObjects();
 });
 
 function setupCollisions() {

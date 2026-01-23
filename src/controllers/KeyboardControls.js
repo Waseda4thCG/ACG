@@ -228,6 +228,11 @@ export class KeyboardControls {
     if (!this.mouseOnlyMode) return;
     if (this.state !== this.STATE.NONE && this.state !== this.STATE.ROTATE) return;
 
+    // UI要素上のスクロールはカメラ操作に反映させない（サイドバーのスクロールを優先）
+    if (event.target.closest('#unified-ui') || event.target.closest('#minimap-ui')) {
+      return;
+    }
+
     event.preventDefault();
 
     if (event.deltaY > 0) {

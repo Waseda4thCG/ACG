@@ -92,6 +92,7 @@ export class EnvironmentManager {
         this.floorMesh.rotation.x = -Math.PI / 2;
         this.floorMesh.position.y = 0;
         this.floorMesh.receiveShadow = true;
+        this.floorMesh.userData.excludeFromMinimap = true; // ミニマップに表示しない
         this.scene.add(this.floorMesh);
 
         this.sharedAssets.floorMesh = this.floorMesh;

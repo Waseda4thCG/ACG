@@ -169,8 +169,8 @@ export class MinimapUI {
   }
 
   update() {
-    // 毎フレーム同期チェック（新しいメッシュが追加された可能性がある）
-    this.syncSceneObjects();
+    // 毎フレームの同期チェックは重いので廃止（必要な時のみ外部から呼ぶ）
+    // this.syncSceneObjects();
 
     // プレイヤーマーカーと円をメインカメラの位置に同期
     this.playerMarker.position.x = this.mainCamera.position.x;

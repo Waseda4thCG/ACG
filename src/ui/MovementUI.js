@@ -6,6 +6,7 @@ export class MovementUI {
     this.container = null;
     this.currentMode = 'free';
     this.environmentManager = environmentManager; // SSOT for environment
+    this.minimapUI = minimapUI; // ミニマップへの参照
     this.environments = ['Urban', 'Nature', 'CyberPunk', 'Underwater', 'Universe']; // 利用可能な環境リスト
     this.onEnvironmentChange = null;
     this.onFlightModeChange = null;
@@ -133,21 +134,8 @@ export class MovementUI {
     this._attachEventListeners();
     document.body.appendChild(this.container);
 
-    // 左下のMキーヒントを追加
-    this.createMKeyHint();
-
     // 下部中央のヒントメッセージを追加
     this.createHintMessage();
-  }
-
-  createMKeyHint() {
-    this.mKeyHint = document.createElement('div');
-    this.mKeyHint.className = 'm-key-hint';
-    this.mKeyHint.innerHTML = `
-      <kbd>M</kbd>
-      <span>Toggle Menu</span>
-    `;
-    document.body.appendChild(this.mKeyHint);
   }
 
   createHintMessage() {
@@ -160,6 +148,8 @@ export class MovementUI {
     `;
     document.body.appendChild(this.hintMessage);
   }
+
+
 
   _injectStyles() {
     if (document.getElementById('unified-ui-styles')) return;
@@ -191,6 +181,7 @@ export class MovementUI {
         left: 0;
         width: 60px;
         height: 60px;
+        margin-top: 2px; /* アイコンを少し下にずらすための微調整 */
         background: rgba(15, 15, 25, 0.85);
         backdrop-filter: blur(20px) saturate(180%);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -202,15 +193,9 @@ export class MovementUI {
         gap: 4px;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        opacity: 0;
-        pointer-events: none;
-        transform: translateX(-10px);
-      }
-
-      #unified-ui.closed .hamburger-menu {
         opacity: 1;
         pointer-events: auto;
-        transform: translateX(0);
+        z-index: 1001;
       }
 
       .hamburger-menu:hover {
@@ -255,27 +240,14 @@ export class MovementUI {
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         opacity: 1;
         transform: translateX(0);
-        /* スクロール可能にする設定 */
-        max-height: calc(100vh - 40px);
+        max-height: calc(100vh - 48px);
         overflow-y: auto;
-        padding-right: 4px; /* スクロールバーとの余白 */
-        scrollbar-width: thin; /* Firefox用 */
-        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        padding-bottom: 100px; /* 下部スクロール用余白 */
+        scrollbar-width: none; /* Firefox */
       }
 
-      /* Webkit系（Chrome, Safari）のスクロールバースタイル */
       .sidebar-content::-webkit-scrollbar {
-        width: 6px;
-      }
-      .sidebar-content::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .sidebar-content::-webkit-scrollbar-thumb {
-        background-color: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
-      }
-      .sidebar-content::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(255, 255, 255, 0.4);
+        display: none; /* Chrome, Safari */
       }
 
       #unified-ui.closed .sidebar-content {
@@ -560,7 +532,7 @@ export class MovementUI {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 180px;
+        max-height: 280px;
         overflow-y: auto;
         overflow-x: hidden;
         padding-right: 4px;
@@ -708,6 +680,7 @@ export class MovementUI {
         text-align: center;
       }
 
+
       /* ヒントメッセージ */
       .hint-message {
         position: fixed;
@@ -756,43 +729,6 @@ export class MovementUI {
 
       body.pointer-locked .hint-active {
         display: inline-block;
-      }
-
-      /* 左下のMキーヒント */
-      .m-key-hint {
-        position: fixed;
-        bottom: 24px;
-        left: 24px;
-        padding: 10px 16px;
-        background: rgba(15, 15, 25, 0.85);
-        backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.7);
-        z-index: 1000;
-        transition: all 0.3s ease;
-      }
-
-      .m-key-hint:hover {
-        border-color: rgba(255, 255, 255, 0.3);
-      }
-
-      .m-key-hint kbd {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-bottom-width: 2px;
-        border-radius: 6px;
-        padding: 4px 8px;
-        font-family: inherit;
-        font-size: 11px;
-        font-weight: 600;
-        color: #ffffff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
 
       /* レスポンシブ */
@@ -896,12 +832,10 @@ export class MovementUI {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       this.container.classList.remove('closed');
-      if (this.mKeyHint) this.mKeyHint.style.display = 'flex';
       if (this.hintMessage) this.hintMessage.style.display = 'block';
       if (this.minimapUI) this.minimapUI.show();
     } else {
       this.container.classList.add('closed');
-      if (this.mKeyHint) this.mKeyHint.style.display = 'none';
       if (this.hintMessage) this.hintMessage.style.display = 'none';
       if (this.minimapUI) this.minimapUI.hide();
     }
@@ -910,7 +844,6 @@ export class MovementUI {
   open() {
     this.isOpen = true;
     this.container.classList.remove('closed');
-    if (this.mKeyHint) this.mKeyHint.style.display = 'flex';
     if (this.hintMessage) this.hintMessage.style.display = 'block';
     if (this.minimapUI) this.minimapUI.show();
   }
@@ -918,7 +851,6 @@ export class MovementUI {
   close() {
     this.isOpen = false;
     this.container.classList.add('closed');
-    if (this.mKeyHint) this.mKeyHint.style.display = 'none';
     if (this.hintMessage) this.hintMessage.style.display = 'none';
     if (this.minimapUI) this.minimapUI.hide();
   }
@@ -978,9 +910,6 @@ export class MovementUI {
   dispose() {
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
-    }
-    if (this.mKeyHint && this.mKeyHint.parentNode) {
-      this.mKeyHint.parentNode.removeChild(this.mKeyHint);
     }
     if (this.hintMessage && this.hintMessage.parentNode) {
       this.hintMessage.parentNode.removeChild(this.hintMessage);
