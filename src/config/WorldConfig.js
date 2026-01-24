@@ -151,6 +151,11 @@ export const WorldConfig = {
 
     Universe: {
         modelScale: 1.0,
+        useSharedLights: false, // using original lights
+
+        floor: {
+            showFloor: false
+        },
 
         // background sphere size
         backgroundRadius: 800.0,

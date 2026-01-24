@@ -105,6 +105,24 @@ export class EnvironmentManager {
         }
     }
 
+    hideFloor() {
+        // delete floor
+        if (this.floorMesh) {
+            this.scene.remove(this.floorMesh);
+            this.floorMesh.geometry.dispose();
+            this.floorMesh.material.dispose();
+            this.floorMesh = null;
+            this.sharedAssets.floorMesh = null;
+        }
+        // delete grid
+        if (this.gridHelper) {
+            this.scene.remove(this.gridHelper);
+            this.gridHelper.geometry.dispose();
+            this.gridHelper.material.dispose();
+            this.gridHelper = null;
+        }
+    }
+
     createLights() {
         // 既存のライトを削除
         this.lights.forEach(light => {
@@ -184,15 +202,21 @@ export class EnvironmentManager {
                 );
                 break;
             case 'Universe':
+                config = WorldConfig.Universe;
                 this.currentEnvironment = new UniverseEnvironment(
-                    this.scene, this.renderer, this.camera, WorldConfig.Universe
+                    this.scene, this.renderer, this.camera, config
                 );
                 break;
         }
 
         // 床とライトを作成
         if (config) {
-            this.createFloor(config.floor);
+            // showFloor: false の場合は床を非表示
+            if (config.floor?.showFloor === false) {
+                this.hideFloor();
+            } else {
+                this.createFloor(config.floor);
+            }
             // 共通ライトを使用する環境のみライトを作成
             if (config.useSharedLights !== false) {
                 this.createLights();
