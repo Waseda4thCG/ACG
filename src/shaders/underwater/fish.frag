@@ -19,7 +19,6 @@ varying vec3 vWorldPosition;
 #include ../functions/noise.glsl
 #include ../functions/caustics.glsl
 
-// 簡易コースティクス
 void main() {
     vec3 normal = normalize(vNormal);
 

@@ -1,3 +1,28 @@
+import { UrbanEnvironment } from '../environments/UrbanEnvironment.js';
+import { NatureEnvironment } from '../environments/NatureEnvironment.js';
+import { CyberPunkEnvironment } from '../environments/CyberPunkEnvironment.js';
+import { UnderwaterEnvironment } from '../environments/UnderwaterEnvironment.js';
+import { UniverseEnvironment } from '../environments/UniverseEnvironment.js';
+import { XEnvironment } from '../environments/XEnvironment.js';
+
+const UrbanConfig = {
+    modelScale: 1.0,
+    useSharedLights: true,
+
+    floor: {
+        floorSize: 500,
+        floorColor: '#4a4a4a',
+        gridColor1: '#ffff00',
+        gridColor2: '#666666',
+        showGrid: true
+    },
+
+    shader: {
+        textureScale: 0.01,
+        windowSize: 0.2,
+    }
+};
+
 export const WorldConfig = {
     Camera: {
         yaw: 0.9,
@@ -18,23 +43,8 @@ export const WorldConfig = {
         collisionDistance: 2.0,
         playerRadius: 1.0
     },
-    Urban: {
-        modelScale: 1.0,
-        useSharedLights: true, // 共通ライトを使用
 
-        floor: {
-            floorSize: 500,
-            floorColor: '#4a4a4a',  // アスファルト
-            gridColor1: '#ffff00',   // 黄色
-            gridColor2: '#666666',   // グレー
-            showGrid: true
-        },
-
-        shader: {
-            textureScale: 0.01,
-            windowSize: 0.2,
-        }
-    },
+    Urban: UrbanConfig,
 
     Nature: {
         modelScale: 1.0,
@@ -186,5 +196,48 @@ export const WorldConfig = {
             nebulaColor1: [0.1, 0.0, 0.3],
             nebulaColor2: [0.0, 0.2, 0.4]
         }
-    }
+    },
+
+    X: {
+        ...UrbanConfig,
+        laser: {
+            color: 0xff0000,
+            transparent: true,
+            opacity: 1.0,
+            duration: 0.3,
+            thickness: 0.1,
+            strength: 8.0
+        },
+        crosshair: {
+            color: 'rgba(255, 0, 0, 0.5)',
+            glowColor: 'rgba(255, 0, 0, 0.8)',
+            size: 30,
+            dotSize: 4
+        },
+        explosion: {
+            count: 1024,          // パーティクル数
+            speed: 25.0,         // 飛散速度（倍率）
+            size: 800.0,         // 基本サイズ（距離減衰前）
+            gravity: 5.0,        // 重力定数
+            duration: 1.5,       // 継続時間（秒）
+            color: 0xff4411,     // 基本色
+            resolution:  32.0     // ピクセル解像度
+        }
+    },
+
+    Environments: [
+        { id: 'Urban', name: 'Urban', icon: '🏙️', class: UrbanEnvironment, config: UrbanConfig },
+        { id: 'Nature', name: 'Nature', icon: '🌿', class: NatureEnvironment, config: null }, // Natureは内部でデフォルトConfig
+        { id: 'CyberPunk', name: 'CyberPunk', icon: '🤖', class: CyberPunkEnvironment, config: null },
+        { id: 'Underwater', name: 'Underwater', icon: '🌊', class: UnderwaterEnvironment, config: null },
+        { id: 'Universe', name: 'Universe', icon: '🌌', class: UniverseEnvironment, config: null },
+        { id: 'X', name: '???', icon: '❓', class: XEnvironment, config: null } // XのconfigはWorldConfig.Xを別途参照する形式を維持
+    ]
 };
+
+// クラス登録後にConfigへの動的参照を補完（循環参照回避のため）
+WorldConfig.Environments.forEach(env => {
+    if (!env.config && WorldConfig[env.id]) {
+        env.config = WorldConfig[env.id];
+    }
+});

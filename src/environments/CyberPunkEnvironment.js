@@ -27,13 +27,11 @@ const GRID_COLOR2 = new THREE.Color('#ff00ff'); // マゼンタ
 
 export class CyberPunkEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.materials = {};
-        this.pcgElements = []; // PCG生成要素
-        this.buildingRoot = null; // 建物のルートメッシュ
+        this.pcgElements = [];
+        this.buildingRoot = null;
     }
-
     init(sharedAssets) {
         // グラデーション背景（Synthwave風の夕日）
         this._setupGradientBackground();
@@ -723,12 +721,8 @@ export class CyberPunkEnvironment extends BaseEnvironment {
     }
 
     update(elapsedTime) {
-        // 全マテリアルのuTimeを更新
-        Object.values(this.materials).forEach(material => {
-            if (material.uniforms && material.uniforms.uTime) {
-                material.uniforms.uTime.value = elapsedTime;
-            }
-        });
+        // 基底クラスで全メッシュの uTime が自動更新される
+        super.update(elapsedTime);
 
         // PCG要素のuTimeを更新とアニメーション
         this.pcgElements.forEach(element => {

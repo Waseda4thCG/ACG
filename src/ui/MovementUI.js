@@ -1,13 +1,10 @@
-/**
- * モダンでスタイリッシュな統一UI
- */
 export class MovementUI {
   constructor(environmentManager = null, minimapUI = null) {
     this.container = null;
     this.currentMode = 'free';
     this.environmentManager = environmentManager; // SSOT for environment
     this.minimapUI = minimapUI; // ミニマップへの参照
-    this.environments = ['Urban', 'Nature', 'CyberPunk', 'Underwater', 'Universe']; // 利用可能な環境リスト
+    this.environments = this.environmentManager ? this.environmentManager.getAvailableEnvironments() : [];
     this.onEnvironmentChange = null;
     this.onFlightModeChange = null;
     this.onControlModeChange = null; // 操作モード変更時のコールバック
@@ -15,6 +12,13 @@ export class MovementUI {
     this.isOpen = false; // サイドバーが開いているか
     this._createUI();
     this._attachKeyboardListener();
+
+    // EnvironmentManagerの状態を監視（Observableパターン）
+    if (this.environmentManager) {
+      this.environmentManager.subscribe((envId) => {
+        this.setEnvironment(envId);
+      });
+    }
   }
 
   _createUI() {
@@ -100,31 +104,13 @@ export class MovementUI {
           <div class="section-hint">Press <kbd>E</kbd></div>
         </div>
         <div class="environment-list">
-          <button class="env-btn active" data-env="Urban">
-            <span class="env-icon">🏙️</span>
-            <span class="env-name">Urban</span>
-            <span class="env-check">✓</span>
-          </button>
-          <button class="env-btn" data-env="Nature">
-            <span class="env-icon">🌿</span>
-            <span class="env-name">Nature</span>
-            <span class="env-check">✓</span>
-          </button>
-          <button class="env-btn" data-env="CyberPunk">
-            <span class="env-icon">🤖</span>
-            <span class="env-name">CyberPunk</span>
-            <span class="env-check">✓</span>
-          </button>
-          <button class="env-btn" data-env="Underwater">
-            <span class="env-icon">🌊</span>
-            <span class="env-name">Underwater</span>
-            <span class="env-check">✓</span>
-          </button>
-          <button class="env-btn" data-env="Universe">
-            <span class="env-icon">🌌</span>
-            <span class="env-name">Universe</span>
-            <span class="env-check">✓</span>
-          </button>
+          ${this.environments.map(env => `
+            <button class="env-btn ${env.id === 'Urban' ? 'active' : ''}" data-env="${env.id}">
+              <span class="env-icon">${env.icon}</span>
+              <span class="env-name">${env.name}</span>
+              <span class="env-check">✓</span>
+            </button>
+          `).join('')}
         </div>
       </div>
       </div>
@@ -136,6 +122,16 @@ export class MovementUI {
 
     // 下部中央のヒントメッセージを追加
     this.createHintMessage();
+
+    // 上部中央の環境名表示を追加
+    this._createEnvironmentLabel();
+  }
+
+  _createEnvironmentLabel() {
+    this.envLabel = document.createElement('div');
+    this.envLabel.id = 'current-env-label';
+    this.envLabel.className = 'current-env-label';
+    document.body.appendChild(this.envLabel);
   }
 
   createHintMessage() {
@@ -532,7 +528,7 @@ export class MovementUI {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 280px;
+        max-height: none;
         overflow-y: auto;
         overflow-x: hidden;
         padding-right: 4px;
@@ -738,6 +734,27 @@ export class MovementUI {
           max-width: 320px;
         }
       }
+
+      .current-env-label {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 24px;
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        z-index: 900;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+        transition: all 0.3s ease;
+      }
     `;
     document.head.appendChild(style);
 
@@ -814,17 +831,17 @@ export class MovementUI {
 
   cycleEnvironment() {
     // EnvironmentManagerから現在の環境を取得（SSOT）
-    const currentEnvironment = this.environmentManager ? this.environmentManager.getCurrentEnvironment() : this.environments[0];
+    const currentEnvId = this.environmentManager ? this.environmentManager.getCurrentEnvironment() : this.environments[0].id;
 
     // 現在の環境のインデックスを取得
-    const currentIndex = this.environments.indexOf(currentEnvironment);
+    const currentIndex = this.environments.findIndex(env => env.id === currentEnvId);
     // 次の環境に切り替え（循環）
     const nextIndex = (currentIndex + 1) % this.environments.length;
     const nextEnv = this.environments[nextIndex];
 
-    this.setEnvironment(nextEnv);
+    this.setEnvironment(nextEnv.id);
     if (this.onEnvironmentChange) {
-      this.onEnvironmentChange(nextEnv);
+      this.onEnvironmentChange(nextEnv.id);
     }
   }
 
@@ -833,10 +850,12 @@ export class MovementUI {
     if (this.isOpen) {
       this.container.classList.remove('closed');
       if (this.hintMessage) this.hintMessage.style.display = 'block';
+      if (this.envLabel) this.envLabel.style.display = 'block';
       if (this.minimapUI) this.minimapUI.show();
     } else {
       this.container.classList.add('closed');
       if (this.hintMessage) this.hintMessage.style.display = 'none';
+      if (this.envLabel) this.envLabel.style.display = 'none';
       if (this.minimapUI) this.minimapUI.hide();
     }
   }
@@ -845,6 +864,7 @@ export class MovementUI {
     this.isOpen = true;
     this.container.classList.remove('closed');
     if (this.hintMessage) this.hintMessage.style.display = 'block';
+    if (this.envLabel) this.envLabel.style.display = 'block';
     if (this.minimapUI) this.minimapUI.show();
   }
 
@@ -852,6 +872,7 @@ export class MovementUI {
     this.isOpen = false;
     this.container.classList.add('closed');
     if (this.hintMessage) this.hintMessage.style.display = 'none';
+    if (this.envLabel) this.envLabel.style.display = 'none';
     if (this.minimapUI) this.minimapUI.hide();
   }
 
@@ -880,17 +901,25 @@ export class MovementUI {
     }
   }
 
-  setEnvironment(env) {
+  setEnvironment(envId) {
     // EnvironmentManagerがSSOTなので、ここでは状態を保存しない
     // UIの見た目だけを更新
     const envButtons = this.container.querySelectorAll('.env-btn');
     envButtons.forEach(btn => {
-      if (btn.dataset.env === env) {
+      if (btn.dataset.env === envId) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
       }
     });
+
+    // 上部ラベルの名前を更新
+    if (this.envLabel) {
+      const envInfo = this.environments.find(e => e.id === envId);
+      if (envInfo) {
+        this.envLabel.innerText = envInfo.name;
+      }
+    }
   }
 
   setControlMode(controlMode) {

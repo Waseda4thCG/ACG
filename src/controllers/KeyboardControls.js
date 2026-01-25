@@ -14,8 +14,8 @@ export class KeyboardControls {
     this.lookSpeed = config.lookSpeed ?? 0.002;
 
     // カメラ回転角度（オイラー角）
-    this.pitch = config.pitch;
-    this.yaw = config.yaw;
+    this.pitch = config.pitch; // 上下回転
+    this.yaw = config.yaw;   // 左右回転
 
     // 床固定モード
     this.grounded = false;
@@ -45,7 +45,7 @@ export class KeyboardControls {
     // マウス操作モード
     this.mouseOnlyMode = false;
 
-    // OrbitControls互換の設定（configから取得）
+    // OrbitControls互換の設定
     this.target = new THREE.Vector3(0, 10, 0);
     this.minDistance = config.minDistance ?? 0.05;
     this.maxDistance = config.maxDistance ?? 500;
@@ -363,14 +363,18 @@ export class KeyboardControls {
     this.raycaster.set(this.camera.position, normalizedDir);
     this.raycaster.far = distance;
 
-    const intersects = this.raycaster.intersectObjects(this.collisionObjects, true);
+    // シーンから削除された（parentがいない）オブジェクトや崩壊中のオブジェクトを除外
+    const validObjects = this.collisionObjects.filter(obj => obj.parent);
+    const intersects = this.raycaster.intersectObjects(validObjects, true);
 
-    if (intersects.length > 0 && intersects[0].distance < distance) {
+    const validIntersects = intersects.filter(intersect => !intersect.object.userData.isCollapsing);
+
+    if (validIntersects.length > 0 && validIntersects[0].distance < distance) {
       return {
         hit: true,
-        distance: intersects[0].distance,
-        normal: intersects[0].face ? intersects[0].face.normal.clone() : new THREE.Vector3(0, 1, 0),
-        point: intersects[0].point
+        distance: validIntersects[0].distance,
+        normal: validIntersects[0].face ? validIntersects[0].face.normal.clone() : new THREE.Vector3(0, 1, 0),
+        point: validIntersects[0].point
       };
     }
 
@@ -422,12 +426,16 @@ export class KeyboardControls {
     this.raycaster.set(footPosition, downDirection);
     this.raycaster.far = this.footHeight + 2.0; // 余裕を持って検出
 
-    const intersects = this.raycaster.intersectObjects(this.collisionObjects, true);
+    const validObjects = this.collisionObjects.filter(obj => obj.parent);
+    const intersects = this.raycaster.intersectObjects(validObjects, true);
 
-    if (intersects.length > 0) {
+    // 崩壊中のオブジェクトは床としても除外
+    const validIntersects = intersects.filter(intersect => !intersect.object.userData.isCollapsing);
+
+    if (validIntersects.length > 0) {
       return {
-        distance: intersects[0].distance,
-        groundY: intersects[0].point.y
+        distance: validIntersects[0].distance,
+        groundY: validIntersects[0].point.y
       };
     }
 

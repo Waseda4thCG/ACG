@@ -1,7 +1,6 @@
 // src/environments/UrbanEnvironment.js
 import * as THREE from 'three';
 import { BaseEnvironment } from './BaseEnvironment.js';
-import { FishController } from '../controllers/FishController.js';
 
 import vertexShader from '../shaders/building/shader.vert';
 import windowFragmentShader from '../shaders/building/window.frag';
@@ -10,11 +9,9 @@ import wallFragmentShader from '../shaders/building/wall.frag';
 
 export class UrbanEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.materials = {};
     }
-
     init(sharedAssets) {
         this.scene.background = new THREE.Color('#001e33');
         this.scene.fog = null;
@@ -46,16 +43,8 @@ export class UrbanEnvironment extends BaseEnvironment {
     }
 
     update(elapsedTime) {
-        this.scene.traverse((child) => {
-            if (child.isMesh && child.material.uniforms && child.material.uniforms.uTime) {
-                child.material.uniforms.uTime.value = elapsedTime;
-            }
-        });
-    }
-
-    dispose() {
-        Object.values(this.materials).forEach(mat => mat.dispose());
-        this.materials = {};
+        // 基底クラスで uTime の自動更新が行われる
+        super.update(elapsedTime);
     }
 
     _setupMaterials() {

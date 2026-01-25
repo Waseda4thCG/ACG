@@ -16,8 +16,7 @@ import { LSystem, LSystemPresets } from '../pcg/LSystem.js';
 
 export class NatureEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.materials = {};
         this.grassMaterial = null;
         this.trees = [];
@@ -250,17 +249,8 @@ export class NatureEnvironment extends BaseEnvironment {
     }
 
     update(elapsedTime) {
-        // 建物シェーダーに時間を渡す
-        this.scene.traverse((child) => {
-            if (child.isMesh && child.material.uniforms && child.material.uniforms.uTime) {
-                child.material.uniforms.uTime.value = elapsedTime;
-            }
-        });
-
-        // 草シェーダーに時間を渡す
-        if (this.grassMaterial && this.grassMaterial.uniforms && this.grassMaterial.uniforms.uTime) {
-            this.grassMaterial.uniforms.uTime.value = elapsedTime;
-        }
+        // 基底クラスでシーン内の全メッシュ（建物、草地など）の uTime が自動更新される
+        super.update(elapsedTime);
     }
 
     dispose() {

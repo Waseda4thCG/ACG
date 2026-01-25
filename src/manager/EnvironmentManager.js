@@ -1,13 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-// 各環境クラスをimport
-import { UrbanEnvironment } from '../environments/UrbanEnvironment.js';
-import { NatureEnvironment } from '../environments/NatureEnvironment.js';
-import { CyberPunkEnvironment } from '../environments/CyberPunkEnvironment.js';
-import { UnderwaterEnvironment } from '../environments/UnderwaterEnvironment.js';
-import { UniverseEnvironment } from '../environments/UniverseEnvironment.js';
-
 import { WorldConfig } from '../config/WorldConfig.js';
 
 // 環境を管理するシングルトンクラス
@@ -27,9 +20,16 @@ export class EnvironmentManager {
             floorMesh: null
         };
 
+        // ハンドラのバインド
+        this._onKeyDown = this._onKeyDown.bind(this);
+        this._onMouseMove = this._onMouseMove.bind(this);
+        this._onPointerLockChange = this._onPointerLockChange.bind(this);
+
         this.floorMesh = null;
         this.gridHelper = null;
         this.lights = [];
+
+        this.listeners = []; // 監視者のリスト
     }
 
     async init(scene, renderer, camera) {
@@ -38,6 +38,11 @@ export class EnvironmentManager {
         this.camera = camera;
 
         await this.loadSharedAssets();
+
+        // グローバルイベントの登録
+        window.addEventListener('keydown', this._onKeyDown);
+        window.addEventListener('mousemove', this._onMouseMove);
+        document.addEventListener('pointerlockchange', this._onPointerLockChange);
     }
 
     loadSharedAssets() {
@@ -150,9 +155,14 @@ export class EnvironmentManager {
             collisionObjects.push(this.floorMesh);
         }
 
+        // 現在の環境が個別のbuildingRootを持っている場合はそれを使う
+        const targetRoot = (this.currentEnvironment && this.currentEnvironment.buildingRoot)
+            ? this.currentEnvironment.buildingRoot
+            : this.sharedAssets.buildingRoot;
+
         // 建物のメッシュを追加
-        if (this.sharedAssets.buildingRoot) {
-            this.sharedAssets.buildingRoot.traverse((child) => {
+        if (targetRoot) {
+            targetRoot.traverse((child) => {
                 if (child.isMesh) {
                     collisionObjects.push(child);
                 }
@@ -165,6 +175,12 @@ export class EnvironmentManager {
     switchMode(modeName) {
         // 既存環境の破棄
         if (this.currentEnvironment) {
+            // 現在の環境が個別のbuildingRootを持っている場合はそれを削除
+            if (this.currentEnvironment.buildingRoot) {
+                this.scene.remove(this.currentEnvironment.buildingRoot);
+            }
+
+            // 共有のbuildingRootもシーンから削除
             if (this.sharedAssets.buildingRoot) {
                 this.scene.remove(this.sharedAssets.buildingRoot);
             }
@@ -174,40 +190,18 @@ export class EnvironmentManager {
         // 環境名を保存（SSOT）
         this.currentModeName = modeName;
 
-        let config = null;
+        // 環境定義をWorldConfigから取得
+        const envDef = WorldConfig.Environments.find(e => e.id === modeName);
 
-        switch (modeName) {
-            case 'Urban':
-                config = WorldConfig.Urban;
-                this.currentEnvironment = new UrbanEnvironment(
-                    this.scene, this.renderer, this.camera, config
-                );
-                break;
-            case 'Nature':
-                config = WorldConfig.Nature;
-                this.currentEnvironment = new NatureEnvironment(
-                    this.scene, this.renderer, this.camera, config
-                );
-                break;
-            case 'CyberPunk':
-                config = WorldConfig.CyberPunk;
-                this.currentEnvironment = new CyberPunkEnvironment(
-                    this.scene, this.renderer, this.camera, config
-                );
-                break;
-            case 'Underwater':
-                config = WorldConfig.Underwater;
-                this.currentEnvironment = new UnderwaterEnvironment(
-                    this.scene, this.renderer, this.camera, config
-                );
-                break;
-            case 'Universe':
-                config = WorldConfig.Universe;
-                this.currentEnvironment = new UniverseEnvironment(
-                    this.scene, this.renderer, this.camera, config
-                );
-                break;
+        if (!envDef || !envDef.class) {
+            console.error(`Environment definition for ${modeName} not found or missing class.`);
+            return;
         }
+
+        const config = envDef.config || {};
+        this.currentEnvironment = new envDef.class(
+            this.scene, this.renderer, this.camera, config
+        );
 
         // 床とライトを作成
         if (config) {
@@ -227,10 +221,54 @@ export class EnvironmentManager {
         if (this.currentEnvironment) {
             this.currentEnvironment.init(this.sharedAssets);
         }
+
+        // 状態変更を通知
+        this.notifyEnvironmentChange(modeName);
+    }
+
+    // 監視者（UIなど）を登録
+    subscribe(callback) {
+        this.listeners.push(callback);
+    }
+
+    // 通知を実行
+    notifyEnvironmentChange(modeName) {
+        this.listeners.forEach(callback => callback(modeName));
+    }
+
+    // --- 入力イベントの委譲（Delegation） ---
+
+    _onKeyDown(event) {
+        if (this.currentEnvironment) {
+            this.currentEnvironment.onKeyDown(event);
+        }
+    }
+
+    _onMouseMove(event) {
+        if (this.currentEnvironment) {
+            // スクリーン座標を正規化して渡す（共通化）
+            const mousePos = {
+                x: (event.clientX / window.innerWidth) * 2 - 1,
+                y: -(event.clientY / window.innerHeight) * 2 + 1,
+                clientX: event.clientX,
+                clientY: event.clientY
+            };
+            this.currentEnvironment.onMouseMove(event, mousePos);
+        }
+    }
+
+    _onPointerLockChange() {
+        if (this.currentEnvironment) {
+            this.currentEnvironment.onPointerLockChange(!!document.pointerLockElement);
+        }
     }
 
     getCurrentEnvironment() {
         return this.currentModeName;
+    }
+
+    getAvailableEnvironments() {
+        return WorldConfig.Environments;
     }
 
     update(elapsedTime) {
