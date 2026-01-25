@@ -191,6 +191,15 @@ export const WorldConfig = {
             glowColor: 'rgba(255, 0, 0, 0.8)',
             size: 30,
             dotSize: 4
+        },
+        explosion: {
+            count: 1024,          // パーティクル数
+            speed: 25.0,         // 飛散速度（倍率）
+            size: 800.0,         // 基本サイズ（距離減衰前）
+            gravity: 5.0,        // 重力定数
+            duration: 1.5,       // 継続時間（秒）
+            color: 0xff4411,     // 基本色
+            resolution:  32.0     // ピクセル解像度
         }
     },
 

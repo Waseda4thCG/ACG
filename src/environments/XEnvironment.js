@@ -1,5 +1,5 @@
-// src/environments/UrbanEnvironment.js
 import * as THREE from 'three';
+import { ExplosionEffect } from '../effects/ExplosionEffect.js';
 import { BaseEnvironment } from './BaseEnvironment.js';
 
 import collapseVertexShader from '../shaders/x/collapse.vert';
@@ -16,6 +16,7 @@ export class XEnvironment extends BaseEnvironment {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.collapsedMeshes = [];
+        this.activeExplosions = [];
         this.sceneStartTime = -1;
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onMouseMove = this._onMouseMove.bind(this);
@@ -123,6 +124,15 @@ export class XEnvironment extends BaseEnvironment {
                 const fadeIn = Math.min(1.0, sceneAge - 5.0);
                 const pulse = 0.85 + Math.sin(elapsedTime * 4.0) * 0.15;
                 this.guideLabel.style.opacity = pulse * fadeIn;
+            }
+        }
+
+        // 爆発エフェクトの更新
+        for (let i = this.activeExplosions.length - 1; i >= 0; i--) {
+            const explosion = this.activeExplosions[i];
+            explosion.update(elapsedTime);
+            if (explosion.isDead) {
+                this.activeExplosions.splice(i, 1);
             }
         }
 
@@ -348,8 +358,15 @@ export class XEnvironment extends BaseEnvironment {
         laserMesh.userData.spawnTime = this.lastElapsedTime || 0;
         this.activeLasers.push(laserMesh);
 
+        if (intersects.length > 0) {
+            // ヒット地点で爆発エフェクトを発生
+            const hitPoint = intersects[0].point.clone();
+            this.activeExplosions.push(new ExplosionEffect(this.scene, hitPoint, this.config.explosion));
+        }
+
         if (targetMesh && hitFaceNormal && targetMesh !== this.floorMesh) {
-            const localHitPoint = intersects[0].point.clone().applyMatrix4(targetMesh.matrixWorld.clone().invert());
+            const hitPoint = intersects[0].point.clone();
+            const localHitPoint = hitPoint.clone().applyMatrix4(targetMesh.matrixWorld.clone().invert());
             this._separateAndCollapse(targetMesh, hitFaceNormal, localHitPoint);
         }
     }
@@ -555,7 +572,6 @@ export class XEnvironment extends BaseEnvironment {
         this.crosshair.appendChild(dot);
         document.body.appendChild(this.crosshair);
 
-        // 操作ガイド「Press 'F'」の追加
         this.guideLabel = document.createElement('div');
         this.guideLabel.id = 'laser-guide';
         this.guideLabel.innerText = "Press 'F'";
