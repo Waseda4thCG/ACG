@@ -147,6 +147,139 @@ export class LSystem {
 
         return new THREE.Mesh(geometry, material);
     }
+
+    // 枝の先端位置も返すバージョン
+    createMeshWithTips(material, options = {}) {
+        const {
+            length = 2,
+            angle = 25,
+            thickness = 0.1,
+            thicknessDecay = 0.9
+        } = options;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const indices = [];
+        const tips = []; // 枝の先端位置
+
+        const stack = [];
+        let position = new THREE.Vector3(0, 0, 0);
+        let direction = new THREE.Vector3(0, 1, 0);
+        let currentLength = length;
+        let currentThickness = thickness;
+        let vertexIndex = 0;
+        let depth = 0;
+
+        for (let char of this.sentence) {
+            switch (char) {
+                case 'F':
+                    {
+                        const startPos = position.clone();
+                        const endPos = position.clone().add(direction.clone().multiplyScalar(currentLength));
+
+                        const cylinderGeo = new THREE.CylinderGeometry(
+                            currentThickness,
+                            currentThickness * thicknessDecay,
+                            currentLength,
+                            6
+                        );
+
+                        const quaternion = new THREE.Quaternion();
+                        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+
+                        const matrix = new THREE.Matrix4();
+                        matrix.compose(
+                            startPos.clone().add(direction.clone().multiplyScalar(currentLength / 2)),
+                            quaternion,
+                            new THREE.Vector3(1, 1, 1)
+                        );
+
+                        cylinderGeo.applyMatrix4(matrix);
+
+                        const posAttr = cylinderGeo.attributes.position;
+                        for (let i = 0; i < posAttr.count; i++) {
+                            positions.push(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+                        }
+
+                        const indexArray = cylinderGeo.index ? cylinderGeo.index.array : [];
+                        for (let i = 0; i < indexArray.length; i++) {
+                            indices.push(indexArray[i] + vertexIndex);
+                        }
+
+                        vertexIndex += posAttr.count;
+                        position = endPos;
+                        currentThickness *= thicknessDecay;
+                    }
+                    break;
+
+                case '+':
+                    {
+                        const rotationAxis = new THREE.Vector3(0, 0, 1);
+                        const rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, THREE.MathUtils.degToRad(angle));
+                        direction.applyMatrix4(rotationMatrix);
+                    }
+                    break;
+
+                case '-':
+                    {
+                        const rotationAxis = new THREE.Vector3(0, 0, 1);
+                        const rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, THREE.MathUtils.degToRad(-angle));
+                        direction.applyMatrix4(rotationMatrix);
+                    }
+                    break;
+
+                case '&':
+                    {
+                        const rotationAxis = new THREE.Vector3(1, 0, 0);
+                        const rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, THREE.MathUtils.degToRad(angle));
+                        direction.applyMatrix4(rotationMatrix);
+                    }
+                    break;
+
+                case '^':
+                    {
+                        const rotationAxis = new THREE.Vector3(1, 0, 0);
+                        const rotationMatrix = new THREE.Matrix4().makeRotationAxis(rotationAxis, THREE.MathUtils.degToRad(-angle));
+                        direction.applyMatrix4(rotationMatrix);
+                    }
+                    break;
+
+                case '[':
+                    stack.push({
+                        position: position.clone(),
+                        direction: direction.clone(),
+                        length: currentLength,
+                        thickness: currentThickness
+                    });
+                    depth++;
+                    break;
+
+                case ']':
+                    // 枝の先端位置を記録（深さが浅いとき）
+                    if (depth >= 2) {
+                        tips.push(position.clone());
+                    }
+                    if (stack.length > 0) {
+                        const state = stack.pop();
+                        position = state.position;
+                        direction = state.direction;
+                        currentLength = state.length;
+                        currentThickness = state.thickness;
+                    }
+                    depth--;
+                    break;
+            }
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+
+        return {
+            mesh: new THREE.Mesh(geometry, material),
+            tips: tips
+        };
+    }
 }
 
 // プリセット

@@ -45,11 +45,26 @@ export const WorldConfig = {
             floorColor: '#2d5016',  // 草地の緑
             gridColor1: '#4a7023',  // 明るい緑
             gridColor2: '#1a3d0a',  // 暗い緑
-            showGrid: true
+            showGrid: false
         },
 
         shader: {
             textureScale: 1.0,
+            windowSize: 0.2,
+        },
+
+        grass: {
+            count: 30000,
+            areaSize: 400,
+            bladeHeight: 1.5,
+            variation: 0.5,
+            excludeRadius: 50
+        },
+
+        trees: {
+            count: 12,
+            minRadius: 60,
+            maxRadius: 180
         }
     },
 
