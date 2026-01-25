@@ -151,6 +151,12 @@ export class XEnvironment extends BaseEnvironment {
             this.laserGeometry.dispose();
         }
 
+        // 爆発エフェクトの削除
+        this.activeExplosions.forEach(explosion => {
+            explosion.dispose();
+        });
+        this.activeExplosions = [];
+
         this._removeCrosshair();
 
         // 破片メッシュ（isCollapsingフラグを持つ独立したメッシュ）をシーンから全削除
