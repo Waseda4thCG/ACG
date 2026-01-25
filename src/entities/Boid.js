@@ -14,6 +14,31 @@ const _alignment = new THREE.Vector3();
 const _cohesion = new THREE.Vector3();
 const _bestDir = new THREE.Vector3();
 
+// Fibonacci Sphere による方向ベクトルの事前計算
+const NUM_VIEW_DIRECTIONS = 32;
+const VIEW_DIRECTIONS = [];
+const GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2;
+const ANGLE_INCREMENT = Math.PI * 2 * GOLDEN_RATIO;
+
+for (let i = 0; i < NUM_VIEW_DIRECTIONS; i++) {
+    const t = i / NUM_VIEW_DIRECTIONS;
+    const inclination = Math.acos(1 - 2 * t);
+    const azimuth = ANGLE_INCREMENT * i;
+
+    const x = Math.sin(inclination) * Math.cos(azimuth);
+    const y = Math.sin(inclination) * Math.sin(azimuth);
+    const z = Math.cos(inclination);
+
+    VIEW_DIRECTIONS.push(new THREE.Vector3(x, y, z));
+}
+
+// Z軸（正面）との内積が大きい順にソート
+VIEW_DIRECTIONS.sort((a, b) => b.z - a.z);
+
+const _q = new THREE.Quaternion();
+const _targetUp = new THREE.Vector3(0, 1, 0);
+const _zAxis = new THREE.Vector3(0, 0, 1);
+
 export class Boid {
     constructor(sceneWidth, sceneHeight, sceneDepth, index, boidConfig = {}) {
         this.sceneWidth = sceneWidth;
@@ -190,20 +215,18 @@ export class Boid {
 
             let found = false;
 
-            // 15方向のランダムに調べる
-            for(let i=0; i < 15; i++) {
-                _tmp.set(
-                    (Math.random() - 0.5) * 2,
-                    (Math.random() - 0.5) * 2,
-                    (Math.random() - 0.5) * 2
-                ).normalize();
+            _forward.copy(this.velocity).normalize();
+            _q.setFromUnitVectors(_zAxis, _forward);
 
-                if (_tmp.dot(_forward) < 0) continue;
+            // 事前計算された均一な32方向を順にテスト
+            for(let i=0; i < NUM_VIEW_DIRECTIONS; i++) {
+                // 方向を自分の向きに合わせて回転
+                _tmp.copy(VIEW_DIRECTIONS[i]).applyQuaternion(_q);
 
                 raycaster.set(this.position, _tmp);
                 const hits = raycaster.intersectObjects(obstacles, true);
 
-                // 障害物に当たらないか、当たっても距離がある場合、その方向に進む
+                // 障害物に当たらないか、当たっても十分に遠いならその方向へ
                 if(hits.length === 0 || hits[0].distance > this.perceptionRadius) {
                     _bestDir.copy(_tmp);
                     found = true;
