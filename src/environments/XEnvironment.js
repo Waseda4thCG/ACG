@@ -9,8 +9,7 @@ import wallFragmentShader from '../shaders/building/wall.frag';
 
 export class XEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.materials = {};
 
         this.raycaster = new THREE.Raycaster();
@@ -18,9 +17,6 @@ export class XEnvironment extends BaseEnvironment {
         this.collapsedMeshes = [];
         this.activeExplosions = [];
         this.sceneStartTime = -1;
-        this._onKeyDown = this._onKeyDown.bind(this);
-        this._onMouseMove = this._onMouseMove.bind(this);
-        this._onPointerLockChange = this._onPointerLockChange.bind(this);
         this.activeLasers = [];
 
         // レーザー用の共通ジオメトリ
@@ -45,10 +41,6 @@ export class XEnvironment extends BaseEnvironment {
 
         // 床の参照を保持
         this.floorMesh = sharedAssets.floorMesh;
-
-        window.addEventListener('keydown', this._onKeyDown);
-        window.addEventListener('mousemove', this._onMouseMove);
-        document.addEventListener('pointerlockchange', this._onPointerLockChange);
 
         if (sharedAssets.buildingRoot) {
             // 既存の建物がある場合は削除
@@ -87,15 +79,12 @@ export class XEnvironment extends BaseEnvironment {
     }
 
     update(elapsedTime) {
+        // 基底クラスで uTime の自動更新が行われる
+        super.update(elapsedTime);
+
         // 環境開始時刻を記録
         if (this.sceneStartTime < 0) this.sceneStartTime = elapsedTime;
         this.lastElapsedTime = elapsedTime;
-
-        this.scene.traverse((child) => {
-            if (child.isMesh && child.material.uniforms && child.material.uniforms.uTime) {
-                child.material.uniforms.uTime.value = elapsedTime;
-            }
-        });
 
         // レーザーの更新とフェードアウト（時間ベース）
         const duration = this.config.laser?.duration ?? 0.3;
@@ -150,9 +139,6 @@ export class XEnvironment extends BaseEnvironment {
     }
 
     dispose() {
-        window.removeEventListener('keydown', this._onKeyDown);
-        window.removeEventListener('mousemove', this._onMouseMove);
-        document.removeEventListener('pointerlockchange', this._onPointerLockChange);
 
         // レーザーの削除
         this.activeLasers.forEach(laser => {
@@ -190,7 +176,7 @@ export class XEnvironment extends BaseEnvironment {
         this.buildingRoot = null;
     }
 
-    _onKeyDown(event) {
+    onKeyDown(event) {
         if (event.code === 'KeyF') {
             this._shootRay();
 
@@ -208,21 +194,22 @@ export class XEnvironment extends BaseEnvironment {
         }
     }
 
-    _onMouseMove(event) {
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    onMouseMove(event, mousePos) {
+        // マネージャーから渡された正規化済み座標を使用
+        this.mouse.x = mousePos.x;
+        this.mouse.y = mousePos.y;
 
         // 照準をカーソルに追従させる（Pointer Lockされていない場合）
         if (this.crosshair && !document.pointerLockElement) {
-            this.crosshair.style.left = `${event.clientX}px`;
-            this.crosshair.style.top = `${event.clientY}px`;
+            this.crosshair.style.left = `${mousePos.clientX}px`;
+            this.crosshair.style.top = `${mousePos.clientY}px`;
             this.crosshair.style.transform = 'translate(-50%, -50%)';
         }
     }
 
-    _onPointerLockChange() {
+    onPointerLockChange(isLocked) {
         // Pointer Lockが有効になったら照準を中央に戻す
-        if (this.crosshair && document.pointerLockElement) {
+        if (this.crosshair && isLocked) {
             this.crosshair.style.left = '50%';
             this.crosshair.style.top = '50%';
             this.crosshair.style.transform = 'translate(-50%, -50%)';

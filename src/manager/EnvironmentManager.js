@@ -20,6 +20,11 @@ export class EnvironmentManager {
             floorMesh: null
         };
 
+        // ハンドラのバインド
+        this._onKeyDown = this._onKeyDown.bind(this);
+        this._onMouseMove = this._onMouseMove.bind(this);
+        this._onPointerLockChange = this._onPointerLockChange.bind(this);
+
         this.floorMesh = null;
         this.gridHelper = null;
         this.lights = [];
@@ -33,6 +38,11 @@ export class EnvironmentManager {
         this.camera = camera;
 
         await this.loadSharedAssets();
+
+        // グローバルイベントの登録
+        window.addEventListener('keydown', this._onKeyDown);
+        window.addEventListener('mousemove', this._onMouseMove);
+        document.addEventListener('pointerlockchange', this._onPointerLockChange);
     }
 
     loadSharedAssets() {
@@ -224,6 +234,33 @@ export class EnvironmentManager {
     // 通知を実行
     notifyEnvironmentChange(modeName) {
         this.listeners.forEach(callback => callback(modeName));
+    }
+
+    // --- 入力イベントの委譲（Delegation） ---
+
+    _onKeyDown(event) {
+        if (this.currentEnvironment) {
+            this.currentEnvironment.onKeyDown(event);
+        }
+    }
+
+    _onMouseMove(event) {
+        if (this.currentEnvironment) {
+            // スクリーン座標を正規化して渡す（共通化）
+            const mousePos = {
+                x: (event.clientX / window.innerWidth) * 2 - 1,
+                y: -(event.clientY / window.innerHeight) * 2 + 1,
+                clientX: event.clientX,
+                clientY: event.clientY
+            };
+            this.currentEnvironment.onMouseMove(event, mousePos);
+        }
+    }
+
+    _onPointerLockChange() {
+        if (this.currentEnvironment) {
+            this.currentEnvironment.onPointerLockChange(!!document.pointerLockElement);
+        }
     }
 
     getCurrentEnvironment() {

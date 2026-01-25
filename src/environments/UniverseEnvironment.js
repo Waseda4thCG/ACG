@@ -11,8 +11,7 @@ import backgroundFragmentShader from '../shaders/universe/background.frag';
 export class UniverseEnvironment extends BaseEnvironment {
 
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.backgroundMesh = null;
         this.wallMaterial = null;
         this.windowMaterial = null;
@@ -304,16 +303,8 @@ export class UniverseEnvironment extends BaseEnvironment {
     }
 
     update(elapsedTime) {
-        if (this.windowMaterial) {
-            this.windowMaterial.uniforms.uTime.value = elapsedTime;
-        }
-        // Wall material has no uniforms to update
-        if (this.roofMaterial) {
-            this.roofMaterial.uniforms.uTime.value = elapsedTime;
-        }
-        if (this.backgroundMaterial) {
-            this.backgroundMaterial.uniforms.uTime.value = elapsedTime;
-        }
+        // 基底クラスで全メッシュの uTime が自動更新される
+        super.update(elapsedTime);
     }
 
     dispose() {

@@ -15,8 +15,7 @@ import backgroundFragmentShader from '../shaders/underwater/background.frag';
 export class UnderwaterEnvironment extends BaseEnvironment {
 
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.fishController = null;
         this.buildingRoot = null;
         this.seabedMaterial = null;
@@ -284,19 +283,12 @@ export class UnderwaterEnvironment extends BaseEnvironment {
     }
 
     update(elapsedTime) {
+        // 基底クラスで全メッシュの uTime が自動更新される
+        // (seabedMaterial 等、シーン内の全 Mesh が対象)
+        super.update(elapsedTime);
+
         if (this.backgroundSphere && this.camera) {
             this.backgroundSphere.position.copy(this.camera.position);
-        }
-
-        this.scene.traverse((child) => {
-            if (child.isMesh && child.material.uniforms && child.material.uniforms.uTime) {
-                child.material.uniforms.uTime.value = elapsedTime;
-            }
-        });
-
-        // 海底砂地マテリアルのuTimeも更新
-        if (this.seabedMaterial && this.seabedMaterial.uniforms.uTime) {
-            this.seabedMaterial.uniforms.uTime.value = elapsedTime;
         }
 
         if (this.fishController) {

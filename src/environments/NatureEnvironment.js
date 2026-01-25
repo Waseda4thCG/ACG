@@ -7,8 +7,7 @@ import natureFragmentShader from '../shaders/nature/nature.frag';
 
 export class NatureEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
-        super(scene, renderer, camera);
-        this.config = config;
+        super(scene, renderer, camera, config);
         this.material = null;
     }
 
@@ -42,12 +41,9 @@ export class NatureEnvironment extends BaseEnvironment {
             this.scene.add(root);
         }
     }
-
     update(elapsedTime) {
-        // シェーダーに時間を渡す（風の揺れアニメーション用）
-        if (this.material && this.material.uniforms && this.material.uniforms.uTime) {
-            this.material.uniforms.uTime.value = elapsedTime;
-        }
+        // 基底クラスで全メッシュの uTime が自動更新される
+        super.update(elapsedTime);
     }
 
     dispose() {
