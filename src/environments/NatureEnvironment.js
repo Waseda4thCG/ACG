@@ -18,13 +18,20 @@ export class NatureEnvironment extends BaseEnvironment {
     constructor(scene, renderer, camera, config) {
         super(scene, renderer, camera, config);
         this.materials = {};
+        this.backgroundMaterial = null;
         this.grassMaterial = null;
         this.trees = [];
     }
 
     init(sharedAssets) {
         // 自然環境用の背景色（空色）
-        this.scene.background = new THREE.Color('#87CEEB');
+        // 環境共通の背景球体を使用する
+        this.backgroundMaterial = new THREE.MeshBasicMaterial({
+            color: '#87CEEB',
+            side: THREE.BackSide,
+            depthWrite: false, // 背景なのでdepth書き込み不要
+            depthTest: false   // 背景なのでdepthテスト不要（最奥に描画）
+        });
 
         // 遠くを霞ませるためのFog
         this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.005);
@@ -261,6 +268,11 @@ export class NatureEnvironment extends BaseEnvironment {
         if (this.grassMaterial) {
             this.grassMaterial.dispose();
             this.grassMaterial = null;
+        }
+
+        if (this.backgroundMaterial) {
+             this.backgroundMaterial.dispose();
+             this.backgroundMaterial = null;
         }
 
         // 木の破棄（InstancedMeshの場合）

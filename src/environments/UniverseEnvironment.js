@@ -12,7 +12,6 @@ export class UniverseEnvironment extends BaseEnvironment {
 
     constructor(scene, renderer, camera, config) {
         super(scene, renderer, camera, config);
-        this.backgroundMesh = null;
         this.wallMaterial = null;
         this.windowMaterial = null;
         this.roofMaterial = null;
@@ -250,8 +249,20 @@ export class UniverseEnvironment extends BaseEnvironment {
             fragmentShader: roofFragmentShader
         });
 
-        this.starTexture = this.generateStarCubeMap(512, shader.starDensity);
-        this.nebulaTexture = this.generateNebulaCubeMap(256);
+        // textureをキャッシュ
+        if (sharedAssets.starTexture) {
+             this.starTexture = sharedAssets.starTexture;
+        } else {
+             this.starTexture = this.generateStarCubeMap(512, shader.starDensity);
+             sharedAssets.starTexture = this.starTexture;
+        }
+
+        if (sharedAssets.nebulaTexture) {
+             this.nebulaTexture = sharedAssets.nebulaTexture;
+        } else {
+             this.nebulaTexture = this.generateNebulaCubeMap(256);
+             sharedAssets.nebulaTexture = this.nebulaTexture;
+        }
 
         // planetarium-like shader material
         this.backgroundMaterial = new THREE.ShaderMaterial({
@@ -264,13 +275,10 @@ export class UniverseEnvironment extends BaseEnvironment {
             },
             vertexShader: backgroundVertexShader,
             fragmentShader: backgroundFragmentShader,
-            side: THREE.BackSide
+            side: THREE.BackSide,
+            depthWrite: false,
+            depthTest: false
         });
-
-        // create background sphere
-        const backgroundGeometry = new THREE.SphereGeometry(backgroundRadius, 64, 64);
-        this.backgroundMesh = new THREE.Mesh(backgroundGeometry, this.backgroundMaterial);
-        this.scene.add(this.backgroundMesh);
 
         // apply material to building model
         if (sharedAssets.buildingRoot) {
@@ -308,12 +316,7 @@ export class UniverseEnvironment extends BaseEnvironment {
     }
 
     dispose() {
-        // remove background sphere
-        if (this.backgroundMesh) {
-            this.scene.remove(this.backgroundMesh);
-            this.backgroundMesh.geometry.dispose();
-            this.backgroundMesh = null;
-        }
+        // background is managed by EnvironmentManager
 
         // dispose materials
         if (this.wallMaterial) {
@@ -331,14 +334,6 @@ export class UniverseEnvironment extends BaseEnvironment {
         if (this.backgroundMaterial) {
             this.backgroundMaterial.dispose();
             this.backgroundMaterial = null;
-        }
-        if (this.starTexture) {
-            this.starTexture.dispose();
-            this.starTexture = null;
-        }
-        if (this.nebulaTexture) {
-            this.nebulaTexture.dispose();
-            this.nebulaTexture = null;
         }
 
         // remove lights

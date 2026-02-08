@@ -31,6 +31,7 @@ export class CyberPunkEnvironment extends BaseEnvironment {
         this.materials = {};
         this.pcgElements = [];
         this.buildingRoot = null;
+        this.backgroundMaterial = null;
     }
     init(sharedAssets) {
         // グラデーション背景（Synthwave風の夕日）
@@ -606,8 +607,7 @@ export class CyberPunkEnvironment extends BaseEnvironment {
         const vertexShader = `
             varying vec3 vWorldPosition;
             void main() {
-                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-                vWorldPosition = worldPosition.xyz;
+                vWorldPosition = position;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
         `;
@@ -626,21 +626,17 @@ export class CyberPunkEnvironment extends BaseEnvironment {
             }
         `;
 
-        const skyGeo = new THREE.SphereGeometry(500, 32, 15);
-        const skyMat = new THREE.ShaderMaterial({
+        this.backgroundMaterial = new THREE.ShaderMaterial({
             vertexShader: vertexShader,
             fragmentShader: fragmentShader,
             uniforms: {
                 topColor: { value: SKY_TOP_COLOR },
                 bottomColor: { value: SKY_BOTTOM_COLOR }
             },
-            side: THREE.BackSide
+            side: THREE.BackSide,
+            depthWrite: false,
+            depthTest: false
         });
-
-        const sky = new THREE.Mesh(skyGeo, skyMat);
-        sky.userData.excludeFromMinimap = true; // ミニマップに表示しない
-        this.scene.add(sky);
-        this.skyMesh = sky;
 
         // 太陽（グローイングサークル）
         const sunGeo = new THREE.CircleGeometry(30, 32);
@@ -788,6 +784,11 @@ export class CyberPunkEnvironment extends BaseEnvironment {
             }
         });
         this.materials = {};
+
+        if (this.backgroundMaterial) {
+            this.backgroundMaterial.dispose();
+            this.backgroundMaterial = null;
+        }
 
         // PCG要素の破棄
         this.pcgElements.forEach(element => {

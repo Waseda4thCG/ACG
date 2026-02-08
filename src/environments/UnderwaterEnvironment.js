@@ -22,38 +22,8 @@ export class UnderwaterEnvironment extends BaseEnvironment {
         this.originalFloorMaterial = null;
         this.lights = [];
         this.lightingUniforms = null;
-        this.backgroundSphere = null;
         this.proxyCollisions = [];
-    }
-
-    createBackgroundSphere() {
-        const { colors } = this.config;
-
-        const geometry = new THREE.SphereGeometry(100, 32, 32);
-
-        const material = new THREE.ShaderMaterial({
-            vertexShader: backgroundVertexShader,
-            fragmentShader: backgroundFragmentShader,
-            uniforms: {
-                uDeepColor: { value: new THREE.Color(colors.deepWater) },
-                uShallowColor: { value: new THREE.Color(colors.shallowWater) }
-            },
-            side: THREE.BackSide,
-            depthWrite: false,
-            depthTest: false,
-            fog: false
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-
-        // 描画順序を強制的に一番最初にする
-        mesh.renderOrder = -999;
-        mesh.frustumCulled = false;
-
-        // ミニマップに表示されないように設定
-        mesh.userData.excludeFromMinimap = true;
-
-        return mesh;
+        this.backgroundMaterial = null;
     }
 
     createLightingUniforms() {
@@ -116,8 +86,19 @@ export class UnderwaterEnvironment extends BaseEnvironment {
         const { fog, shader, modelScale, colors, lighting } = this.config;
 
         this.scene.background = null;
-        this.backgroundSphere = this.createBackgroundSphere();
-        this.scene.add(this.backgroundSphere);
+
+        this.backgroundMaterial = new THREE.ShaderMaterial({
+            vertexShader: backgroundVertexShader,
+            fragmentShader: backgroundFragmentShader,
+            uniforms: {
+                uDeepColor: { value: new THREE.Color(colors.deepWater) },
+                uShallowColor: { value: new THREE.Color(colors.shallowWater) }
+            },
+            side: THREE.BackSide,
+            depthWrite: false,
+            depthTest: false,
+            fog: false
+        });
 
         this.scene.fog = new THREE.FogExp2(new THREE.Color(colors.deepWater), fog.density);
 
@@ -160,7 +141,7 @@ export class UnderwaterEnvironment extends BaseEnvironment {
             sharedAssets.floorMesh.material = this.seabedMaterial;
         }
 
-        // 判定用の透明マテリアル（visible:falseはレイキャストで検出されないため、透明度で対応）
+        // 判定用の透明マテリアル
         const proxyCollisionMaterial = new THREE.MeshBasicMaterial({
             visible: true,
             transparent: true,
@@ -287,10 +268,6 @@ export class UnderwaterEnvironment extends BaseEnvironment {
         // (seabedMaterial 等、シーン内の全 Mesh が対象)
         super.update(elapsedTime);
 
-        if (this.backgroundSphere && this.camera) {
-            this.backgroundSphere.position.copy(this.camera.position);
-        }
-
         if (this.fishController) {
             this.fishController.update(elapsedTime);
         }
@@ -315,12 +292,6 @@ export class UnderwaterEnvironment extends BaseEnvironment {
         });
         this.lights = [];
 
-        if (this.backgroundSphere) {
-            this.scene.remove(this.backgroundSphere);
-            this.backgroundSphere.geometry.dispose();
-            this.backgroundSphere.material.dispose();
-            this.backgroundSphere = null;
-        }
         this.scene.background = null;
 
         if (this.originalFloorMaterial) {
@@ -335,6 +306,11 @@ export class UnderwaterEnvironment extends BaseEnvironment {
         if (this.seabedMaterial) {
             this.seabedMaterial.dispose();
             this.seabedMaterial = null;
+        }
+
+        if (this.backgroundMaterial) {
+             this.backgroundMaterial.dispose();
+             this.backgroundMaterial = null;
         }
 
         // 消していたメッシュを復元

@@ -28,6 +28,7 @@ export class EnvironmentManager {
         this.floorMesh = null;
         this.gridHelper = null;
         this.lights = [];
+        this.backgroundMesh = null;
 
         this.listeners = []; // 監視者のリスト
     }
@@ -187,6 +188,9 @@ export class EnvironmentManager {
             this.currentEnvironment.dispose();
         }
 
+        // 背景をクリア（次の環境で再設定される）
+        this.removeBackground();
+
         // 環境名を保存（SSOT）
         this.currentModeName = modeName;
 
@@ -205,21 +209,23 @@ export class EnvironmentManager {
 
         // 床とライトを作成
         if (config) {
-            // showFloor: false の場合は床を非表示
             if (config.floor?.showFloor === false) {
                 this.hideFloor();
             } else {
                 this.createFloor(config.floor);
             }
-            // 共通ライトを使用する環境のみライトを作成
+
             if (config.useSharedLights !== false) {
                 this.createLights();
             }
         }
 
-        // 新しい環境のセットアップ
         if (this.currentEnvironment) {
             this.currentEnvironment.init(this.sharedAssets);
+
+            if (this.currentEnvironment.backgroundMaterial) {
+                this.setBackground(this.currentEnvironment.backgroundMaterial);
+            }
         }
 
         // 状態変更を通知
@@ -271,9 +277,37 @@ export class EnvironmentManager {
         return WorldConfig.Environments;
     }
 
+    setBackground(material) {
+        this.removeBackground();
+
+        const geometry = new THREE.SphereGeometry(100, 32, 32);
+        this.backgroundMesh = new THREE.Mesh(geometry, material);
+
+        // 描画順序を強制的に一番最初にする
+        this.backgroundMesh.renderOrder = -999;
+        this.backgroundMesh.frustumCulled = false;
+
+        // ミニマップに表示されないように設定
+        this.backgroundMesh.userData.excludeFromMinimap = true;
+
+        this.scene.add(this.backgroundMesh);
+    }
+
+    removeBackground() {
+        if (this.backgroundMesh) {
+            this.scene.remove(this.backgroundMesh);
+            this.backgroundMesh.geometry.dispose();
+            this.backgroundMesh = null;
+        }
+    }
+
     update(elapsedTime) {
         if (this.currentEnvironment) {
             this.currentEnvironment.update(elapsedTime);
+        }
+
+        if (this.backgroundMesh && this.camera) {
+            this.backgroundMesh.position.copy(this.camera.position);
         }
     }
 }
