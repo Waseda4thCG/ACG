@@ -1,6 +1,13 @@
 # ACG (Working Title)
 ACG group work (Work In Progress)
 
+### Project Overview
+Advanced 3D Web Application using Three.js.
+Seamlessly switch between multiple environments (Urban, Nature, CyberPunk, Underwater, Universe) with unique visuals and physics.
+
+### Live Demo
+[https://acg-weld.vercel.app/](https://acg-weld.vercel.app/)
+
 ## Requirements
 - **Node.js**
 - **npm** (Comes with Node.js)
