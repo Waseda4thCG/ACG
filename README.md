@@ -3,6 +3,7 @@ ACG group work (Work In Progress)
 
 ### Project Overview
 Advanced 3D Web Application using Three.js.
+This project features a 3D recreation of **Waseda University Nishi-Waseda Campus**.
 Seamlessly switch between multiple environments (Urban, Nature, CyberPunk, Underwater, Universe) with unique visuals and physics.
 
 ### Live Demo
