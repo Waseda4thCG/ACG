@@ -1,5 +1,5 @@
-# ACG (Working Title)
-ACG group work (Work In Progress)
+# ACG
+ACG group work
 
 ### Project Overview
 Advanced 3D Web Application using Three.js.
