@@ -48,6 +48,7 @@ export class MovementUI {
             <div class="title-subtitle">~ What if Rico were in 〇〇 ~</div>
           </div>
         </div>
+        <button class="help-button" id="help-button" title="操作説明">?</button>
       </div>
 
       <!-- Flight Mode選択 -->
@@ -125,6 +126,9 @@ export class MovementUI {
 
     // 上部中央の環境名表示を追加
     this._createEnvironmentLabel();
+
+    // ヘルプモーダルを作成
+    this._createHelpModal();
   }
 
   _createEnvironmentLabel() {
@@ -143,6 +147,76 @@ export class MovementUI {
       <span class="hint-active">Click again or press ESC to exit</span>
     `;
     document.body.appendChild(this.hintMessage);
+  }
+
+  _createHelpModal() {
+    this.helpModal = document.createElement('div');
+    this.helpModal.className = 'help-modal-overlay';
+    this.helpModal.id = 'help-modal-overlay';
+    this.helpModal.innerHTML = `
+      <div class="help-modal">
+        <div class="help-modal-header">
+          <div class="help-modal-title">操作説明</div>
+          <button class="help-modal-close" id="help-modal-close">×</button>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">移動</div>
+          <div class="help-item">
+            <div class="help-keys"><span class="help-key">W</span><span class="help-key">A</span><span class="help-key">S</span><span class="help-key">D</span></div>
+            <div class="help-desc">前後左右に移動</div>
+          </div>
+          <div class="help-item">
+            <div class="help-keys"><span class="help-key">Space</span><span class="help-key">Shift</span></div>
+            <div class="help-desc">上昇 / 下降（Free Flightモード）</div>
+          </div>
+          <div class="help-item">
+            <div class="help-keys"><span class="help-mouse">🖱️ ドラッグ</span></div>
+            <div class="help-desc">画面クリック → ドラッグで視点回転</div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">ショートカット</div>
+          <div class="help-item">
+            <div class="help-keys"><span class="help-key">M</span></div>
+            <div class="help-desc">メニューの表示 / 非表示</div>
+          </div>
+          <div class="help-item">
+            <div class="help-keys"><span class="help-key">E</span></div>
+            <div class="help-desc">環境を切り替え</div>
+          </div>
+          <div class="help-item">
+            <div class="help-keys"><span class="help-key">G</span></div>
+            <div class="help-desc">飛行モードを切り替え</div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(this.helpModal);
+
+    // モーダルを閉じるイベント
+    const closeBtn = this.helpModal.querySelector('#help-modal-close');
+    closeBtn.addEventListener('click', () => this._closeHelpModal());
+
+    // オーバーレイクリックで閉じる
+    this.helpModal.addEventListener('click', (e) => {
+      if (e.target === this.helpModal) {
+        this._closeHelpModal();
+      }
+    });
+  }
+
+  _openHelpModal() {
+    if (this.helpModal) {
+      this.helpModal.classList.add('visible');
+    }
+  }
+
+  _closeHelpModal() {
+    if (this.helpModal) {
+      this.helpModal.classList.remove('visible');
+    }
   }
 
 
@@ -277,15 +351,17 @@ export class MovementUI {
       /* ヘッダー */
       .ui-header {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
+        padding: 12px 16px 12px 50px; /* 左側にハンバーガーメニュー用のスペース */
       }
 
       .app-title {
         display: flex;
         align-items: center;
         gap: 10px;
+        flex: 1;
+        justify-content: center;
       }
 
       .title-icon {
@@ -328,6 +404,170 @@ export class MovementUI {
         font-weight: 500;
         color: rgba(255, 255, 255, 0.5);
         letter-spacing: 0.3px;
+      }
+
+      /* ヘルプボタン */
+      .help-button {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-left: auto;
+      }
+
+      .help-button:hover {
+        background: rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.6);
+        color: #ffffff;
+        transform: scale(1.1);
+      }
+
+      /* ヘルプモーダル */
+      .help-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .help-modal-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .help-modal {
+        background: rgba(15, 15, 25, 0.95);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 28px 32px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+      }
+
+      .help-modal-overlay.visible .help-modal {
+        transform: scale(1);
+      }
+
+      .help-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .help-modal-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+      }
+
+      .help-modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .help-modal-close:hover {
+        background: rgba(239, 68, 68, 0.3);
+        color: #ffffff;
+      }
+
+      .help-section {
+        margin-bottom: 16px;
+      }
+
+      .help-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .help-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(102, 126, 234, 0.9);
+        margin-bottom: 8px;
+      }
+
+      .help-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .help-keys {
+        display: flex;
+        gap: 4px;
+        min-width: 100px;
+      }
+
+      .help-key {
+        min-width: 28px;
+        height: 26px;
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom-width: 2px;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .help-desc {
+        flex: 1;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .help-mouse {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
 
       /* Flight Modeセクション */
@@ -811,6 +1051,14 @@ export class MovementUI {
     if (hamburger) {
       hamburger.addEventListener('click', () => {
         this.toggle();
+      });
+    }
+
+    // ヘルプボタンのクリックイベント
+    const helpButton = this.container.querySelector('#help-button');
+    if (helpButton) {
+      helpButton.addEventListener('click', () => {
+        this._openHelpModal();
       });
     }
   }
